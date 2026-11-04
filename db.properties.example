@@ -1,0 +1,4 @@
+# File cau hinh mau - Copy file nay thanh db.properties va dien thong tin thuc te cua ban
+db.url=jdbc:mysql://localhost:3306/QuanLyPhongKhamThuCuc?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh
+db.user=root
+db.password=YOUR_PASSWORD_HERE

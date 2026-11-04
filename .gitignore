@@ -1,0 +1,38 @@
+
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs
+hs_err_pid*
+
+# Build tools & IDEs
+target/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.nbdefs
+build/
+nbproject/private/
+nbproject/project.xml
+nbproject/project.properties
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Database Local Credentials
+db.properties
