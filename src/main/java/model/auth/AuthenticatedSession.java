@@ -2,16 +2,18 @@ package model.auth;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public final class AuthenticatedSession {
-    private final long maTaiKhoan;
-    private final String tenDangNhap;
-    private final String maNhanVien;
-    private final String hoTenNhanVien;
-    private final List<VaiTro> vaiTro;
-    private final List<Quyen> quyen;
-    private final Set<String> maQuyen;
+    private final AtomicBoolean active = new AtomicBoolean(true);
+    private volatile long maTaiKhoan;
+    private volatile String tenDangNhap;
+    private volatile String maNhanVien;
+    private volatile String hoTenNhanVien;
+    private volatile List<VaiTro> vaiTro;
+    private volatile List<Quyen> quyen;
+    private volatile Set<String> maQuyen;
 
     public AuthenticatedSession(
             long maTaiKhoan,
@@ -80,11 +82,27 @@ public final class AuthenticatedSession {
     }
 
     public boolean hasPermission(String permissionCode) {
-        return maQuyen.contains(permissionCode);
+        return isActive() && permissionCode != null && maQuyen.contains(permissionCode);
     }
 
     public boolean hasAnyPermission(Set<String> permissionCodes) {
-        return permissionCodes != null
+        return isActive() && permissionCodes != null
                 && permissionCodes.stream().anyMatch(this::hasPermission);
+    }
+
+    public boolean isActive() {
+        return active.get();
+    }
+
+    public synchronized void revoke() {
+        if (active.compareAndSet(true, false)) {
+            maTaiKhoan = 0;
+            tenDangNhap = "";
+            maNhanVien = "";
+            hoTenNhanVien = "";
+            vaiTro = List.of();
+            quyen = List.of();
+            maQuyen = Set.of();
+        }
     }
 }

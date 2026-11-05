@@ -2,6 +2,7 @@ package bus.auth;
 
 import dao.auth.AuthenticationDAO;
 import dao.auth.AuthenticationDAOException;
+import java.util.Arrays;
 import java.util.List;
 import model.auth.AuthenticatedSession;
 import model.auth.NhanVien;
@@ -112,6 +113,125 @@ public final class AuthenticationBUS {
                     AuthenticationException.Reason.DATABASE_ERROR,
                     "Không thể kết nối hoặc truy vấn cơ sở dữ liệu. Kiểm tra cấu hình SQL Server rồi thử lại.",
                     exception);
+        }
+    }
+
+    public void changePassword(
+            AuthenticatedSession session,
+            char[] currentPassword,
+            char[] newPassword,
+            char[] confirmation) throws AuthenticationException {
+        requireActiveSession(session);
+        synchronized (session) {
+            changePasswordForSession(session, currentPassword, newPassword, confirmation);
+        }
+    }
+
+    private void changePasswordForSession(
+            AuthenticatedSession session,
+            char[] currentPassword,
+            char[] newPassword,
+            char[] confirmation) throws AuthenticationException {
+        requireActiveSession(session);
+        if (currentPassword == null || currentPassword.length == 0
+                || newPassword == null || newPassword.length == 0
+                || confirmation == null || confirmation.length == 0) {
+            throw new AuthenticationException(
+                    AuthenticationException.Reason.INVALID_INPUT,
+                    "Vui lòng nhập đầy đủ mật khẩu hiện tại, mật khẩu mới và xác nhận.");
+        }
+        if (!Arrays.equals(newPassword, confirmation)) {
+            throw new AuthenticationException(
+                    AuthenticationException.Reason.PASSWORD_CONFIRMATION_MISMATCH,
+                    "Mật khẩu mới và xác nhận mật khẩu không trùng khớp.");
+        }
+        if (newPassword.length < 8) {
+            throw new AuthenticationException(
+                    AuthenticationException.Reason.PASSWORD_POLICY_VIOLATION,
+                    "Mật khẩu mới phải có ít nhất 8 ký tự.");
+        }
+
+        try {
+            long accountId = session.getAccountId();
+            String currentHash = authenticationDAO.findPasswordHash(accountId);
+            if (currentHash == null) {
+                session.revoke();
+                throw new AuthenticationException(
+                        AuthenticationException.Reason.SESSION_EXPIRED,
+                        "Tài khoản không còn hoạt động. Vui lòng đăng nhập lại.");
+            }
+
+            final boolean currentPasswordMatches;
+            try {
+                currentPasswordMatches = PasswordHasher.verify(currentPassword, currentHash);
+            } catch (IllegalArgumentException exception) {
+                authenticationDAO.recordFailedPasswordChange(
+                        accountId, "Không thể xác minh hash mật khẩu hiện tại.");
+                throw new AuthenticationException(
+                        AuthenticationException.Reason.PASSWORD_NOT_CONFIGURED,
+                        "Thông tin xác thực tài khoản chưa hợp lệ. Vui lòng liên hệ quản trị viên.");
+            }
+            if (!currentPasswordMatches) {
+                authenticationDAO.recordFailedPasswordChange(
+                        accountId, "Xác minh mật khẩu hiện tại không thành công.");
+                throw new AuthenticationException(
+                        AuthenticationException.Reason.CURRENT_PASSWORD_INCORRECT,
+                        "Mật khẩu hiện tại không chính xác.");
+            }
+            if (Arrays.equals(currentPassword, newPassword)) {
+                throw new AuthenticationException(
+                        AuthenticationException.Reason.PASSWORD_POLICY_VIOLATION,
+                        "Mật khẩu mới phải khác mật khẩu hiện tại.");
+            }
+
+            String newHash = PasswordHasher.hash(newPassword);
+            if (!session.isActive()) {
+                throw new AuthenticationException(
+                        AuthenticationException.Reason.SESSION_EXPIRED,
+                        "Phiên đăng nhập đã kết thúc. Vui lòng đăng nhập lại.");
+            }
+            if (!authenticationDAO.changePassword(accountId, currentHash, newHash)) {
+                throw new AuthenticationException(
+                        AuthenticationException.Reason.SESSION_EXPIRED,
+                        "Thông tin tài khoản đã thay đổi. Vui lòng đăng nhập lại.");
+            }
+        } catch (AuthenticationDAOException exception) {
+            throw new AuthenticationException(
+                    AuthenticationException.Reason.DATABASE_ERROR,
+                    "Không thể đổi mật khẩu do lỗi truy cập cơ sở dữ liệu. Vui lòng thử lại.",
+                    exception);
+        }
+    }
+
+    public void logout(AuthenticatedSession session) throws AuthenticationException {
+        if (session == null) {
+            return;
+        }
+        synchronized (session) {
+            if (!session.isActive()) {
+                return;
+            }
+            long accountId = session.getAccountId();
+            String username = session.getUsername();
+            try {
+                authenticationDAO.recordLogout(accountId, username);
+            } catch (AuthenticationDAOException exception) {
+                throw new AuthenticationException(
+                        AuthenticationException.Reason.DATABASE_ERROR,
+                        "Đã kết thúc phiên đăng nhập nhưng không thể ghi nhật ký đăng xuất.",
+                        exception);
+            } finally {
+                session.revoke();
+            }
+        }
+    }
+
+    private void requireActiveSession(AuthenticatedSession session)
+            throws AuthenticationException {
+        if (session == null || !session.isActive() || session.getAccountId() <= 0) {
+            throw new AuthenticationException(
+                    AuthenticationException.Reason.SESSION_EXPIRED,
+                    "Phiên đăng nhập đã kết thúc. Vui lòng đăng nhập lại.");
         }
     }
 

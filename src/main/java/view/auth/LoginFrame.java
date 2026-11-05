@@ -4,22 +4,27 @@ import bus.auth.AuthenticationBUS;
 import bus.auth.AuthenticationException;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.RenderingHints;
+import java.awt.geom.Path2D;
+import java.net.URL;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
-import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 import java.util.Arrays;
@@ -48,8 +53,8 @@ public final class LoginFrame extends JFrame {
     public LoginFrame() {
         super("Đăng nhập | Phòng khám Thu Cúc");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1080, 700);
-        setMinimumSize(new Dimension(900, 620));
+        setSize(1280, 720);
+        setMinimumSize(new Dimension(1080, 680));
         setLocationRelativeTo(null);
         setContentPane(createContent());
         getRootPane().setDefaultButton(loginButton);
@@ -58,82 +63,33 @@ public final class LoginFrame extends JFrame {
     }
 
     private JPanel createContent() {
-        JPanel root = new JPanel(new GridBagLayout());
-        root.setBackground(new Color(242, 247, 252));
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(Color.WHITE);
 
-        JPanel card = new JPanel(new GridLayout(1, 2));
-        card.setBackground(Color.WHITE);
-        card.setPreferredSize(new Dimension(860, 540));
-        card.setBorder(BorderFactory.createLineBorder(BORDER));
-        card.add(createBrandPanel());
-        card.add(createFormPanel());
-
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.insets = new Insets(24, 24, 24, 24);
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.weightx = 1;
-        constraints.weighty = 1;
-        root.add(card, constraints);
+        JPanel form = createFormPanel();
+        form.setPreferredSize(new Dimension(420, 0));
+        form.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 0, 1, BORDER),
+                new EmptyBorder(36, 34, 32, 34)));
+        root.add(form, BorderLayout.WEST);
+        root.add(new WelcomePanel(), BorderLayout.CENTER);
         return root;
-    }
-
-    private JPanel createBrandPanel() {
-        JPanel brand = new JPanel(new GridBagLayout());
-        brand.setBackground(new Color(18, 63, 72));
-        brand.setBorder(new EmptyBorder(36, 32, 36, 32));
-        JPanel content = new JPanel();
-        content.setOpaque(false);
-        content.setLayout(new javax.swing.BoxLayout(content, javax.swing.BoxLayout.Y_AXIS));
-
-        JLabel mark = new JLabel(new AppIcon("medical", Color.WHITE, 34), SwingConstants.CENTER);
-        mark.setOpaque(true);
-        mark.setBackground(BLUE);
-        mark.setForeground(Color.WHITE);
-        mark.setPreferredSize(new Dimension(58, 58));
-        mark.setMaximumSize(new Dimension(58, 58));
-        mark.setAlignmentX(LEFT_ALIGNMENT);
-        JLabel name = new JLabel("THU CÚC");
-        name.setForeground(Color.WHITE);
-        name.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        JLabel system = new JLabel("HỆ THỐNG QUẢN LÝ PHÒNG KHÁM");
-        system.setForeground(new Color(206, 221, 238));
-        system.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        JLabel description = new JLabel("<html>Quản lý lịch hẹn, hồ sơ bệnh nhân<br>"
-                + "và hoạt động phòng khám trên một nền tảng.</html>");
-        description.setForeground(new Color(220, 231, 244));
-        description.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        JLabel securityInfo = new JLabel("KẾT NỐI SQL SERVER · PHÂN QUYỀN RBAC");
-        securityInfo.setForeground(new Color(172, 199, 224));
-        securityInfo.setFont(new Font("Segoe UI", Font.BOLD, 9));
-
-        content.add(mark);
-        content.add(Box.vertical(24));
-        content.add(name);
-        content.add(Box.vertical(6));
-        content.add(system);
-        content.add(Box.vertical(22));
-        content.add(description);
-        content.add(Box.vertical(28));
-        content.add(securityInfo);
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.weightx = 1;
-        brand.add(content, constraints);
-        return brand;
     }
 
     private JPanel createFormPanel() {
         JPanel form = new JPanel(new GridBagLayout());
         form.setBackground(Color.WHITE);
-        form.setBorder(new EmptyBorder(34, 40, 30, 40));
         JPanel fields = new JPanel();
         fields.setOpaque(false);
         fields.setLayout(new javax.swing.BoxLayout(fields, javax.swing.BoxLayout.Y_AXIS));
+        fields.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
         JLabel title = new JLabel("Đăng nhập hệ thống");
+        title.setAlignmentX(Component.LEFT_ALIGNMENT);
         title.setForeground(TEXT);
         title.setFont(new Font("Segoe UI", Font.BOLD, 24));
         JLabel subtitle = new JLabel("Đăng nhập để tiếp tục vào hệ thống");
+        subtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
         subtitle.setForeground(MUTED);
         subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         fields.add(title);
@@ -141,19 +97,25 @@ public final class LoginFrame extends JFrame {
         fields.add(subtitle);
         fields.add(Box.vertical(25));
 
-        fields.add(fieldLabel("Tên đăng nhập"));
+        JLabel usernameLabel = fieldLabel("Tên đăng nhập");
+        usernameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        fields.add(usernameLabel);
         styleInput(username);
         username.putClientProperty("JTextField.placeholderText", "Nhập tên đăng nhập");
         fields.add(Box.vertical(7));
         fields.add(username);
         fields.add(Box.vertical(15));
 
-        fields.add(fieldLabel("Mật khẩu"));
+        JLabel passwordLabel = fieldLabel("Mật khẩu");
+        passwordLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        fields.add(passwordLabel);
         styleInput(password);
         password.putClientProperty("JPasswordField.placeholderText", "Nhập mật khẩu");
         fields.add(Box.vertical(7));
         JPanel passwordRow = new JPanel(new BorderLayout(6, 0));
         passwordRow.setOpaque(false);
+        passwordRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        passwordRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         passwordRow.add(password, BorderLayout.CENTER);
         JButton togglePassword = new JButton("Hiện", new AppIcon("eye", BLUE, 14));
         togglePassword.setFocusPainted(false);
@@ -182,11 +144,16 @@ public final class LoginFrame extends JFrame {
                 "Quên mật khẩu", JOptionPane.INFORMATION_MESSAGE));
         options.add(remember, BorderLayout.WEST);
         options.add(forgot, BorderLayout.EAST);
+        options.setAlignmentX(Component.LEFT_ALIGNMENT);
+        options.setMaximumSize(new Dimension(Integer.MAX_VALUE,
+                options.getPreferredSize().height));
         fields.add(options);
         fields.add(Box.vertical(9));
 
         error.setForeground(new Color(190, 62, 62));
         error.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        error.setAlignmentX(Component.LEFT_ALIGNMENT);
+        error.setMaximumSize(new Dimension(Integer.MAX_VALUE, error.getPreferredSize().height));
         fields.add(error);
         loginButton = createLoginButton();
         fields.add(loginButton);
@@ -194,6 +161,7 @@ public final class LoginFrame extends JFrame {
         JLabel note = new JLabel("Sử dụng tài khoản được quản trị viên cấp.");
         note.setForeground(MUTED);
         note.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        note.setAlignmentX(Component.LEFT_ALIGNMENT);
         fields.add(note);
 
         GridBagConstraints constraints = new GridBagConstraints();
@@ -213,6 +181,8 @@ public final class LoginFrame extends JFrame {
         login.setBorderPainted(false);
         login.setFocusPainted(false);
         login.setPreferredSize(new Dimension(0, 42));
+        login.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        login.setAlignmentX(Component.LEFT_ALIGNMENT);
         login.addActionListener(event -> signIn());
         return login;
     }
@@ -299,6 +269,8 @@ public final class LoginFrame extends JFrame {
     private void styleInput(JTextField input) {
         input.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         input.setPreferredSize(new Dimension(0, 38));
+        input.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+        input.setAlignmentX(Component.LEFT_ALIGNMENT);
     }
 
     private static final class Box {
@@ -308,6 +280,66 @@ public final class LoginFrame extends JFrame {
             spacer.setPreferredSize(new Dimension(1, height));
             spacer.setMaximumSize(new Dimension(Integer.MAX_VALUE, height));
             return spacer;
+        }
+    }
+
+    private static final class WelcomePanel extends JPanel {
+        private final ImageIcon background;
+
+        private WelcomePanel() {
+            setOpaque(false);
+            URL imageUrl = LoginFrame.class.getResource("/images/thucuc.jpeg");
+            if (imageUrl == null) {
+                throw new IllegalStateException("Không tìm thấy ảnh nền /images/thucuc.jpeg.");
+            }
+            background = new ImageIcon(imageUrl);
+        }
+
+        @Override
+        protected void paintComponent(Graphics graphics) {
+            super.paintComponent(graphics);
+            int panelWidth = getWidth();
+            int panelHeight = getHeight();
+            if (panelWidth <= 0 || panelHeight <= 0) {
+                return;
+            }
+            double scale = Math.max(
+                    (double) panelWidth / 900,
+                    (double) panelHeight / 700);
+            int width = (int) Math.ceil(panelWidth / scale);
+            int height = (int) Math.ceil(panelHeight / scale);
+            Graphics2D g2 = (Graphics2D) graphics.create();
+            Path2D rightRoundedClip = new Path2D.Float();
+            rightRoundedClip.moveTo(0, 0);
+            rightRoundedClip.lineTo(panelWidth - 24, 0);
+            rightRoundedClip.quadTo(panelWidth, 0, panelWidth, 24);
+            rightRoundedClip.lineTo(panelWidth, panelHeight - 24);
+            rightRoundedClip.quadTo(
+                    panelWidth, panelHeight, panelWidth - 24, panelHeight);
+            rightRoundedClip.lineTo(0, panelHeight);
+            rightRoundedClip.closePath();
+            g2.clip(rightRoundedClip);
+            g2.setRenderingHint(
+                    RenderingHints.KEY_INTERPOLATION,
+                    RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2.drawImage(background.getImage(), 0, 0, width, height,
+                    0, 0, 900, 700, this);
+
+            java.awt.GradientPaint overlay = new java.awt.GradientPaint(
+                    0, panelHeight * 0.48f, new Color(20, 42, 91, 0),
+                    0, panelHeight, new Color(16, 34, 78, 220));
+            g2.setPaint(overlay);
+            g2.fillRect(0, 0, panelWidth, panelHeight);
+
+            int left = 44;
+            int bottom = panelHeight - 48;
+            g2.setColor(Color.WHITE);
+            g2.setFont(new Font("Segoe UI", Font.BOLD, 32));
+            g2.drawString("Chào mừng trở lại", left, bottom - 44);
+            g2.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+            g2.setColor(new Color(240, 246, 255));
+            g2.drawString("Hệ thống quản lý phòng khám Thu Cúc", left, bottom - 14);
+            g2.dispose();
         }
     }
 }

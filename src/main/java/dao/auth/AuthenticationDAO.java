@@ -105,6 +105,99 @@ public final class AuthenticationDAO {
         }
     }
 
+    public String findPasswordHash(long accountId) {
+        String sql = "SELECT MatKhauHash FROM dbo.TaiKhoan "
+                + "WHERE MaTaiKhoan = ? AND TrangThai = N'HoatDong'";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, accountId);
+            try (ResultSet result = statement.executeQuery()) {
+                return result.next() ? result.getString("MatKhauHash") : null;
+            }
+        } catch (SQLException exception) {
+            throw new AuthenticationDAOException("Không thể đọc thông tin xác thực tài khoản.", exception);
+        }
+    }
+
+    public boolean changePassword(long accountId, String currentHash, String newHash) {
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                String sql = "UPDATE a "
+                        + "SET MatKhauHash = ? "
+                        + "FROM dbo.TaiKhoan a "
+                        + "WHERE a.MaTaiKhoan = ? AND a.MatKhauHash = ? "
+                        + "AND a.TrangThai = N'HoatDong' "
+                        + "AND EXISTS (SELECT 1 FROM dbo.NhanVien n "
+                        + "WHERE n.MaNhanVien = a.MaNhanVien "
+                        + "AND n.TrangThaiCongTac IN (N'DangLam', N'ThuViec'))";
+                try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                    statement.setString(1, newHash);
+                    statement.setLong(2, accountId);
+                    statement.setString(3, currentHash);
+                    if (statement.executeUpdate() != 1) {
+                        connection.rollback();
+                        return false;
+                    }
+                }
+                insertSecurityAudit(connection, accountId, "DOI_MAT_KHAU_THANH_CONG",
+                        "TaiKhoan", Long.toString(accountId), "Đổi mật khẩu thành công.");
+                connection.commit();
+                return true;
+            } catch (SQLException exception) {
+                rollback(connection, exception);
+                throw exception;
+            }
+        } catch (SQLException exception) {
+            throw new AuthenticationDAOException("Không thể cập nhật mật khẩu.", exception);
+        }
+    }
+
+    public void recordFailedPasswordChange(long accountId, String description) {
+        recordSecurityEvent(accountId, "DOI_MAT_KHAU_THAT_BAI", description);
+    }
+
+    public void recordLogout(long accountId, String username) {
+        recordSecurityEvent(accountId, "DANG_XUAT",
+                "Đăng xuất tài khoản " + username + ".");
+    }
+
+    private void recordSecurityEvent(long accountId, String action, String description) {
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                insertSecurityAudit(connection, accountId, action,
+                        "TaiKhoan", Long.toString(accountId), description);
+                connection.commit();
+            } catch (SQLException exception) {
+                rollback(connection, exception);
+                throw exception;
+            }
+        } catch (SQLException exception) {
+            throw new AuthenticationDAOException("Không thể ghi nhật ký bảo mật.", exception);
+        }
+    }
+
+    private void insertSecurityAudit(
+            Connection connection,
+            long accountId,
+            String action,
+            String object,
+            String objectId,
+            String description) throws SQLException {
+        String sql = "INSERT INTO dbo.NhatKyHeThong "
+                + "(MaTaiKhoan, HanhDong, DoiTuong, MaDoiTuong, NoiDung) "
+                + "VALUES (?, ?, ?, ?, ?)";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, accountId);
+            statement.setNString(2, action);
+            statement.setNString(3, object);
+            statement.setString(4, objectId);
+            statement.setNString(5, description);
+            statement.executeUpdate();
+        }
+    }
+
     private List<VaiTro> findActiveRoles(Connection connection, long accountId)
             throws SQLException {
         String sql = "SELECT DISTINCT v.MaVaiTro, v.TenVaiTro, v.TrangThai "

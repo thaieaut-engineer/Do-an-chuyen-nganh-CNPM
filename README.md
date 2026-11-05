@@ -529,10 +529,11 @@ Sau khi chạy `database/SeedData.sql`, có thể dùng các tài khoản demo s
 
 ### 8.3. Xác thực và phân quyền
 
-- Mật khẩu được xác minh bằng PBKDF2-HMAC-SHA256 của JDK, theo định dạng hash do `auth.PasswordHasher` quy định; mật khẩu rõ không được lưu trong database.
+- Mật khẩu được xác minh bằng PBKDF2-HMAC-SHA256 của JDK, theo định dạng hash do `bus.auth.PasswordHasher` quy định; mật khẩu rõ không được lưu trong database.
 - Tài khoản chỉ đăng nhập khi trạng thái là `HoatDong` và nhân viên được gán còn trạng thái công tác hợp lệ.
 - Vai trò và quyền được nạp từ `TaiKhoanVaiTro`, `VaiTro`, `VaiTroQuyen` và `Quyen`. Sidebar chỉ hiển thị trang người dùng có quyền; MainFrame kiểm tra lại quyền khi điều hướng.
-- Đăng xuất giải phóng MainFrame và quay về màn hình đăng nhập. Các BUS nghiệp vụ cần gọi `AuthorizationBUS.requirePermission(...)` trước thao tác được bảo vệ.
+- Menu tài khoản trên HeaderPanel cung cấp thông tin tài khoản, đổi mật khẩu và đăng xuất. Đổi mật khẩu yêu cầu mật khẩu hiện tại, mật khẩu mới tối thiểu 8 ký tự và xác nhận khớp; DAO cập nhật hash và ghi nhật ký trong cùng transaction.
+- Đăng xuất cần xác nhận, ghi nhật ký, thu hồi session và xóa quyền đang giữ trước khi quay về LoginFrame. Các BUS nghiệp vụ cần gọi `AuthorizationBUS.requirePermission(...)` trước thao tác được bảo vệ.
 - Các màn hình nghiệp vụ ngoài đăng nhập hiện vẫn có thành phần dùng Mock Data/khung giao diện; xác thực và danh sách quyền lấy từ SQL Server, nhưng điều đó không đồng nghĩa mọi chức năng nghiệp vụ đã được tích hợp database.
 
 ### 8.4. Phân tầng chức năng đăng nhập
@@ -546,7 +547,7 @@ view.auth.LoginFrame
     ← model.auth.AuthenticatedSession
 ```
 
-`AuthenticationDAO` tự quản lý JDBC resource và transaction cho cập nhật lần đăng nhập cùng nhật ký. `AuthenticationBUS` kiểm tra trạng thái/mật khẩu và tạo session; session không chứa mật khẩu hay hash. `PasswordHasher` và `AuthenticationException` được đặt cùng tầng BUS để không còn package `auth` tách rời.
+`AuthenticationDAO` tự quản lý JDBC resource và transaction cho đăng nhập, đổi mật khẩu cùng nhật ký. `AuthenticationBUS` kiểm tra trạng thái/mật khẩu, đổi mật khẩu và đăng xuất; session không chứa mật khẩu hay hash, đồng thời bị thu hồi khi đăng xuất. `PasswordHasher` và `AuthenticationException` được đặt cùng tầng BUS để không còn package `auth` tách rời.
 
 ---
 

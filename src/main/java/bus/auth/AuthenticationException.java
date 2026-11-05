@@ -4,6 +4,10 @@ public final class AuthenticationException extends Exception {
     public enum Reason {
         INVALID_INPUT,
         INVALID_CREDENTIALS,
+        CURRENT_PASSWORD_INCORRECT,
+        PASSWORD_CONFIRMATION_MISMATCH,
+        PASSWORD_POLICY_VIOLATION,
+        SESSION_EXPIRED,
         ACCOUNT_LOCKED,
         ACCOUNT_PENDING,
         ACCOUNT_REVOKED,

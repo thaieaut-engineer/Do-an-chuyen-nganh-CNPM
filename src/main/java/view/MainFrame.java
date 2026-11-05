@@ -1,10 +1,14 @@
 package view;
 
 import com.formdev.flatlaf.FlatLightLaf;
+import bus.auth.AuthenticationBUS;
+import bus.auth.AuthenticationException;
 import bus.auth.AuthorizationBUS;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -24,24 +28,33 @@ public class MainFrame extends JFrame {
     static final Color BORDER = new Color(229, 234, 240);
 
     private final AuthenticatedSession session;
+    private final AuthenticationBUS authenticationBUS = new AuthenticationBUS();
     private final AuthorizationBUS authorizationBUS = new AuthorizationBUS();
     private final SidebarPanel sidebar;
     private final HeaderPanel header;
     private final JPanel pageHost = new JPanel(new BorderLayout());
     private final List<String> availablePages;
+    private boolean logoutStarted;
 
     public MainFrame(AuthenticatedSession session) {
         super("Phòng khám Thu Cúc | Quản lý phòng khám");
-        if (session == null) {
+        if (session == null || !session.isActive()) {
             throw new IllegalArgumentException("Không thể mở MainFrame khi chưa xác thực.");
         }
         this.session = session;
         sidebar = new SidebarPanel(session, this::showPage);
         availablePages = sidebar.getAvailablePages();
         header = new HeaderPanel(session, availablePages,
-                this::showPage, this::logout, sidebar::toggleCollapsed);
+                this::showPage, this::confirmAndLogout,
+                this::openChangePasswordDialog, sidebar::toggleCollapsed);
 
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
+                confirmAndLogout();
+            }
+        });
         setMinimumSize(new Dimension(1180, 760));
         setSize(1440, 900);
         setLocationRelativeTo(null);
@@ -103,8 +116,43 @@ public class MainFrame extends JFrame {
         pageHost.repaint();
     }
 
-    private void logout() {
-        dispose();
-        new view.auth.LoginFrame().setVisible(true);
+    private void openChangePasswordDialog() {
+        new view.auth.ChangePasswordDialog(this, session, authenticationBUS).setVisible(true);
     }
+
+    private void confirmAndLogout() {
+        if (logoutStarted) {
+            return;
+        }
+        int choice = JOptionPane.showOptionDialog(
+                this,
+                "Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?",
+                "Xác nhận đăng xuất",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                new Object[]{"Hủy", "Đăng xuất"},
+                "Hủy");
+        if (choice != 1) {
+            return;
+        }
+
+        logoutStarted = true;
+        String auditWarning = null;
+        try {
+            authenticationBUS.logout(session);
+        } catch (AuthenticationException exception) {
+            auditWarning = exception.getMessage();
+        } finally {
+            session.revoke();
+            pageHost.removeAll();
+            dispose();
+            new view.auth.LoginFrame().setVisible(true);
+        }
+        if (auditWarning != null) {
+            JOptionPane.showMessageDialog(
+                    null, auditWarning, "Đăng xuất", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
 }

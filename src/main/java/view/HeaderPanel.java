@@ -23,7 +23,8 @@ final class HeaderPanel extends JPanel {
     private final JLabel pageTitle = new JLabel("Tổng quan");
 
     HeaderPanel(AuthenticatedSession session, List<String> pages,
-            Consumer<String> onNavigate, Runnable onLogout, Runnable onToggleSidebar) {
+            Consumer<String> onNavigate, Runnable onLogout,
+            Runnable onChangePassword, Runnable onToggleSidebar) {
         super(new BorderLayout(18, 0));
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createCompoundBorder(
@@ -64,7 +65,7 @@ final class HeaderPanel extends JPanel {
         account.setIconTextGap(8);
         account.setFocusPainted(false);
         account.addActionListener(event -> showAccountMenu(
-                account, session.getEmployeeName(), session.getDisplayRole(), onLogout));
+                account, session, onLogout, onChangePassword));
 
         JPanel actions = new JPanel(new BorderLayout(14, 0));
         actions.setOpaque(false);
@@ -113,12 +114,26 @@ final class HeaderPanel extends JPanel {
         popup.show((JButton) event.getSource(), 0, ((JButton) event.getSource()).getHeight());
     }
 
-    private void showAccountMenu(JButton anchor, String username, String role, Runnable onLogout) {
+    private void showAccountMenu(
+            JButton anchor,
+            AuthenticatedSession session,
+            Runnable onLogout,
+            Runnable onChangePassword) {
         JPopupMenu menu = new JPopupMenu();
-        JLabel user = new JLabel("  " + username + " · " + role);
-        user.setIcon(new AppIcon("user", MainFrame.BLUE, 16));
-        user.setBorder(new EmptyBorder(7, 8, 7, 8));
-        menu.add(user);
+        javax.swing.JMenuItem accountInfo = new javax.swing.JMenuItem(
+                "Thông tin tài khoản", new AppIcon("user", MainFrame.BLUE, 16));
+        accountInfo.addActionListener(event -> JOptionPane.showMessageDialog(
+                this,
+                "Nhân viên: " + session.getEmployeeName()
+                        + "\nTên đăng nhập: " + session.getUsername()
+                        + "\nVai trò: " + session.getDisplayRole(),
+                "Thông tin tài khoản",
+                JOptionPane.INFORMATION_MESSAGE));
+        menu.add(accountInfo);
+        javax.swing.JMenuItem changePassword = new javax.swing.JMenuItem(
+                "Đổi mật khẩu", new AppIcon("key", MainFrame.MUTED, 16));
+        changePassword.addActionListener(event -> onChangePassword.run());
+        menu.add(changePassword);
         menu.addSeparator();
         javax.swing.JMenuItem logout = new javax.swing.JMenuItem(
                 "Đăng xuất", new AppIcon("logout", MainFrame.MUTED, 16));

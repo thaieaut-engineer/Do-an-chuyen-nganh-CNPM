@@ -34,7 +34,7 @@ public final class AuthorizationBUS {
     );
 
     public boolean canAccessPage(AuthenticatedSession session, String page) {
-        if (session == null || page == null) {
+        if (session == null || !session.isActive() || page == null) {
             return false;
         }
         if ("Tổng quan".equals(page)) {
