@@ -42,20 +42,18 @@ Các phân hệ nghiệp vụ chính bao gồm:
 
 | Thành phần | Đặc tả |
 |---|---|
-| Hệ quản trị cơ sở dữ liệu | MySQL 8.0+ |
-| Storage Engine | InnoDB |
-| Character Set | `utf8mb4` |
-| Collation | `utf8mb4_unicode_ci` |
+| Hệ quản trị cơ sở dữ liệu | Microsoft SQL Server |
+| Cơ sở dữ liệu | `QuanLyPhongKhamThuCuc` |
 | Công nghệ kết nối | Java Database Connectivity (JDBC) |
-| JDBC Driver | `com.mysql.cj.jdbc.Driver` |
-| Công cụ quản lý | MySQL Workbench, DBeaver, SQL Studio hoặc công cụ tương thích MySQL |
+| JDBC Driver | `com.microsoft.sqlserver.jdbc.SQLServerDriver` |
+| Công cụ quản lý | SQL Server Management Studio (SSMS) |
 
 ### Yêu cầu môi trường
 
-- MySQL Server phiên bản 8.0 trở lên.
+- Microsoft SQL Server.
 - Java Development Kit (JDK).
-- MySQL Connector/J để kết nối ứng dụng Java với MySQL.
-- Công cụ quản lý và truy vấn cơ sở dữ liệu.
+- Maven để tải Microsoft SQL Server JDBC Driver.
+- SQL Server Management Studio để quản lý cơ sở dữ liệu.
 
 ---
 
@@ -140,54 +138,45 @@ QuanLyPhongKhamThuCuc
 
 ## 4. Hướng dẫn cài đặt cơ sở dữ liệu
 
-### 4.1. Cài đặt bằng công cụ quản lý MySQL
+### 4.1. Cài đặt bằng SQL Server Management Studio
 
-**Bước 1:** Khởi động MySQL Server và kết nối đến máy chủ cơ sở dữ liệu.
+**Bước 1:** Khởi động SQL Server và kết nối đúng instance bằng SSMS.
 
-**Bước 2:** Mở tệp SQL:
+**Bước 2:** Mở `database/schema.sql` và thực thi để tạo database cùng các bảng.
 
-```text
-QuanLyPhongKhamThuCuc_Database_ThietKeMoi.sql
-```
+**Bước 3:** Mở `database/SeedData.sql`, chọn Execute để thêm dữ liệu mẫu và xem báo cáo ở cuối script.
 
-**Bước 3:** Kiểm tra kết nối đang sử dụng đúng MySQL Server.
-
-**Bước 4:** Thực thi toàn bộ nội dung SQL Script bằng chức năng **Run / Execute** của công cụ.
-
-**Bước 5:** Sau khi thực thi thành công, làm mới danh sách cơ sở dữ liệu và kiểm tra:
+Kiểm tra database và số bảng trong SSMS:
 
 ```sql
-SHOW DATABASES;
+SELECT name FROM sys.databases WHERE name = N'QuanLyPhongKhamThuCuc';
 ```
 
-Kiểm tra các bảng trong cơ sở dữ liệu:
+Kiểm tra các bảng:
 
 ```sql
 USE QuanLyPhongKhamThuCuc;
-
-SHOW TABLES;
+SELECT name FROM sys.tables ORDER BY name;
 ```
 
-### 4.2. Cài đặt bằng Terminal / Command Line
+### 4.2. Cài đặt bằng sqlcmd
 
-Có thể sử dụng MySQL Command Line Client để thực thi trực tiếp tệp SQL:
+Có thể chạy schema và seed từ terminal Windows với Windows Authentication:
 
-```bash
-mysql -u root -p < QuanLyPhongKhamThuCuc_Database_ThietKeMoi.sql
+```powershell
+sqlcmd -S localhost -E -C -i database\schema.sql
+sqlcmd -S localhost -E -C -i database\SeedData.sql
 ```
-
-Sau đó nhập mật khẩu tài khoản MySQL khi được yêu cầu.
 
 ### 4.3. Kiểm tra sau khi cài đặt
 
-Sử dụng câu lệnh sau để kiểm tra cơ sở dữ liệu:
+Sử dụng câu lệnh sau để kiểm tra số bảng:
 
 ```sql
 USE QuanLyPhongKhamThuCuc;
 
 SELECT COUNT(*) AS TongSoBang
-FROM information_schema.tables
-WHERE table_schema = 'QuanLyPhongKhamThuCuc';
+FROM sys.tables;
 ```
 
 ---
@@ -262,56 +251,25 @@ Việc tách biệt hai nghiệp vụ giúp phân định rõ trách nhiệm gi�
 
 ## 6. Tích hợp JDBC trong ứng dụng Java
 
-Ứng dụng Java sử dụng **JDBC (Java Database Connectivity)** để kết nối và thao tác với cơ sở dữ liệu MySQL.
+Ứng dụng Java sử dụng **JDBC (Java Database Connectivity)** cùng Microsoft SQL Server JDBC Driver. Cấu hình kết nối được đọc từ `db.properties` (không đưa thông tin xác thực vào Git).
 
-### 6.1. Cài đặt MySQL Connector/J
+### 6.1. Cấu hình SQL Server
 
-Nếu sử dụng Maven, thêm dependency sau vào tệp `pom.xml`:
+Sao chép `db.properties.example` thành `db.properties`, sau đó cập nhật instance, tên database và thông tin đăng nhập SQL Server:
 
-```xml
-<dependency>
-    <groupId>com.mysql</groupId>
-    <artifactId>mysql-connector-j</artifactId>
-    <version>9.5.0</version>
-</dependency>
+```properties
+db.url=jdbc:sqlserver://localhost:1433;databaseName=QuanLyPhongKhamThuCuc;encrypt=true;trustServerCertificate=true
+db.user=sa
+db.password=YOUR_SQL_SERVER_PASSWORD
 ```
 
-Nếu không sử dụng Maven, có thể thêm tệp MySQL Connector/J `.jar` vào Libraries của dự án.
+Maven đã khai báo `com.microsoft.sqlserver:mssql-jdbc`. Với SQL Server Express, thay `localhost:1433` bằng instance/port thực tế. `trustServerCertificate=true` phù hợp môi trường phát triển; triển khai thật nên cấu hình chứng chỉ tin cậy.
 
-### 6.2. Tạo lớp kết nối DatabaseManager.java
+### 6.2. Lớp kết nối
 
-Tạo lớp `DatabaseManager` trong package `com.thucuc.clinic.dal`:
+`config.DatabaseConnection.getConnection()` nạp cấu hình và chỉ chấp nhận JDBC URL bắt đầu bằng `jdbc:sqlserver:`. Connection được đóng bằng try-with-resources tại DAO/service sử dụng.
 
-```java
-package com.thucuc.clinic.dal;
-
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-
-public class DatabaseManager {
-
-    private static final String URL =
-        "jdbc:mysql://localhost:3306/QuanLyPhongKhamThuCuc"
-        + "?useSSL=false"
-        + "&allowPublicKeyRetrieval=true"
-        + "&serverTimezone=Asia/Ho_Chi_Minh";
-
-    private static final String USER = "root";
-    private static final String PASSWORD = "your_password_here";
-
-    public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASSWORD);
-    }
-}
-```
-
-**Lưu ý:**
-
-- Thay `your_password_here` bằng mật khẩu MySQL của máy tính.
-- Kiểm tra lại tên database và cổng kết nối MySQL.
-- Không nên lưu mật khẩu thật trực tiếp trong mã nguồn khi đưa dự án lên GitHub.
-- Với phiên bản MySQL Connector/J hiện đại, JDBC Driver được tự động đăng ký, không cần gọi `Class.forName()` trong trường hợp thông thường.
+Không commit `db.properties` hoặc thông tin mật khẩu thật.
 
 ### 6.3. Truy vấn dữ liệu bằng JDBC
 
@@ -352,7 +310,7 @@ String sql = """
     WHERE pk.MaLuotKham = ?
     """;
 
-try (Connection conn = DatabaseManager.getConnection();
+try (Connection conn = config.DatabaseConnection.getConnection();
      PreparedStatement ps = conn.prepareStatement(sql)) {
 
     ps.setLong(1, maLuotKham);
@@ -397,7 +355,7 @@ public boolean processDrugIssue(
     Connection conn = null;
 
     try {
-        conn = DatabaseManager.getConnection();
+        conn = config.DatabaseConnection.getConnection();
         conn.setAutoCommit(false);
 
         // 1. Tạo phiếu xuất kho
@@ -542,33 +500,67 @@ Việc phân quyền được xử lý tại tầng ứng dụng Java, kết h�
 
 ---
 
-## 8. Thiết kế giao diện
+## 8. Đăng nhập, phân quyền và giao diện
 
-Ứng dụng sử dụng Java Swing và FlatLaf. Điểm chạy `view.MainFrame` mở màn hình đăng nhập demo; sau khi nhập tên đăng nhập và mật khẩu bất kỳ (không để trống), ứng dụng mở màn hình chính. Chọn vai trò demo tại màn hình đăng nhập để xem menu tương ứng. Giai đoạn UI sử dụng Mock Data và không kết nối cơ sở dữ liệu.
+Ứng dụng sử dụng Java Swing và FlatLaf. Điểm chạy `view.MainFrame` hiển thị màn hình đăng nhập; hệ thống chỉ mở giao diện chính sau khi xác thực tài khoản với SQL Server thành công. Không có chế độ chọn vai trò hay đăng nhập demo.
 
-Để chạy trong NetBeans, mở thư mục dự án hoặc tệp `pom.xml` dưới dạng Maven project, chờ Maven tải các dependencies, sau đó chọn **Run Project**. Action Maven của NetBeans trong `nbactions.xml` gọi `process-classes` và `exec:java` với runtime classpath; lớp khởi chạy là `view.MainFrame`. Có thể chạy trực tiếp lớp này bằng **Run File**. Dự án dùng JDK 17 trở lên. Lớp `com.vetcare.ql_phong_kham.QL_Phong_Kham` vẫn chuyển tiếp tới `MainFrame.main` để tương thích với cấu hình chạy cũ.
+### 8.1. Thiết lập và chạy
 
-Giai đoạn 1 đã xây dựng:
+1. Tạo database và dữ liệu mẫu theo mục 4.
+2. Tạo `db.properties` từ `db.properties.example` trong thư mục gốc dự án và điền cấu hình đúng với SQL Server đang chạy.
+3. Mở dự án Maven bằng NetBeans, chọn JDK 17 trở lên, chờ Maven nạp dependencies rồi chọn **Run Project**. Lớp khởi chạy Maven là `view.MainFrame`; cấu hình chạy NetBeans trong `nbactions.xml` gọi `exec:java`.
 
-- **Đăng nhập:** kiểm tra trường bắt buộc, hiện/ẩn mật khẩu, ghi nhớ đăng nhập, quên mật khẩu demo và chọn vai trò để xem menu.
-- **Khung ứng dụng:** sidebar có thể thu gọn, điều hướng theo vai trò, header có tìm kiếm nhanh, thông báo mẫu, menu tài khoản và đăng xuất.
-- **Tổng quan:** sáu thẻ thống kê, biểu đồ bệnh nhân và doanh thu theo tháng, trạng thái lịch hẹn, danh sách lịch hẹn và hoạt động gần đây bằng Mock Data.
-- Các mục nghiệp vụ khác đang là khung điều hướng; form và thao tác nghiệp vụ sẽ được triển khai ở các giai đoạn tiếp theo.
+Không commit `db.properties` hoặc thông tin đăng nhập. Nếu ứng dụng báo không kết nối được database, xác nhận instance/port, database name, tài khoản SQL Server và trạng thái SQL Server trước khi chạy.
 
-Tệp `database/schema.sql`, cấu hình JDBC và các phần hướng dẫn cơ sở dữ liệu hiện có trong tài liệu vẫn theo MySQL. Chúng chưa được chuyển đổi sang SQL Server; cần thực hiện chuyển đổi schema và cấu hình kết nối riêng trước khi triển khai backend. UI hiện tại không gọi JDBC và không cần JDBC driver để chạy.
+### 8.2. Tài khoản dữ liệu mẫu
+
+Sau khi chạy `database/SeedData.sql`, có thể dùng các tài khoản demo sau:
+
+| Tên đăng nhập | Mật khẩu | Vai trò mẫu |
+|---|---|---|
+| `admin` | `AdminDemo#2026` | Quản trị viên |
+| `letan.huong` | `LeTanDemo#2026` | Lễ tân |
+| `bacsi.thanh` | `BacSiDemo#2026` | Bác sĩ |
+| `kho.phuc` | `KhoDemo#2026` | Nhân viên kho |
+| `thungan.van` | `ThuNganDemo#2026` | Thu ngân |
+| `quanly.nam` | `QuanLyDemo#2026` | Quản lý |
+
+Đây là thông tin dành riêng cho môi trường phát triển/kiểm thử. Đổi mật khẩu hoặc vô hiệu hóa tài khoản demo trước khi triển khai thật.
+
+### 8.3. Xác thực và phân quyền
+
+- Mật khẩu được xác minh bằng PBKDF2-HMAC-SHA256 của JDK, theo định dạng hash do `auth.PasswordHasher` quy định; mật khẩu rõ không được lưu trong database.
+- Tài khoản chỉ đăng nhập khi trạng thái là `HoatDong` và nhân viên được gán còn trạng thái công tác hợp lệ.
+- Vai trò và quyền được nạp từ `TaiKhoanVaiTro`, `VaiTro`, `VaiTroQuyen` và `Quyen`. Sidebar chỉ hiển thị trang người dùng có quyền; MainFrame kiểm tra lại quyền khi điều hướng.
+- Đăng xuất giải phóng MainFrame và quay về màn hình đăng nhập. Các BUS nghiệp vụ cần gọi `AuthorizationBUS.requirePermission(...)` trước thao tác được bảo vệ.
+- Các màn hình nghiệp vụ ngoài đăng nhập hiện vẫn có thành phần dùng Mock Data/khung giao diện; xác thực và danh sách quyền lấy từ SQL Server, nhưng điều đó không đồng nghĩa mọi chức năng nghiệp vụ đã được tích hợp database.
+
+### 8.4. Phân tầng chức năng đăng nhập
+
+```text
+view.auth.LoginFrame
+    → bus.auth.AuthenticationBUS / AuthorizationBUS
+        → dao.auth.AuthenticationDAO
+            → config.DatabaseConnection → SQL Server
+        ← model.auth.TaiKhoan, NhanVien, VaiTro, Quyen
+    ← model.auth.AuthenticatedSession
+```
+
+`AuthenticationDAO` tự quản lý JDBC resource và transaction cho cập nhật lần đăng nhập cùng nhật ký. `AuthenticationBUS` kiểm tra trạng thái/mật khẩu và tạo session; session không chứa mật khẩu hay hash. `PasswordHasher` và `AuthenticationException` được đặt cùng tầng BUS để không còn package `auth` tách rời.
 
 ---
 
 ## 📌 Ghi chú
 
 - Tên bảng và tên cột trong tài liệu được trình bày theo thiết kế cơ sở dữ liệu của dự án.
-- Các câu lệnh SQL và mã Java trong tài liệu có mục đích minh họa cách kết nối, truy vấn và xử lý nghiệp vụ.
+- Schema `database/schema.sql` và dữ liệu mẫu `database/SeedData.sql` dành cho Microsoft SQL Server.
+- Các ví dụ truy vấn/cấp phát ở mục 6.3–6.4 chỉ minh họa; cần đối chiếu cấu trúc bảng và kiểu dữ liệu thực tế trước khi dùng cho nghiệp vụ.
 - Khi triển khai thực tế, cần đối chiếu các câu lệnh với cấu trúc bảng và kiểu dữ liệu trong SQL Script.
-- Không đưa mật khẩu MySQL, thông tin tài khoản hoặc dữ liệu cá nhân thật lên GitHub.
+- Không đưa mật khẩu SQL Server, thông tin tài khoản hoặc dữ liệu cá nhân thật lên GitHub.
 
 ---
 
 **Project:** Quản lý phòng khám Thu Cúc  
 **Database:** `QuanLyPhongKhamThuCuc`  
-**Database Management System:** MySQL 8.0+  
-**Backend Connectivity:** Java JDBC  
+**Database Management System:** Microsoft SQL Server
+**Backend Connectivity:** Java JDBC

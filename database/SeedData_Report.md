@@ -41,18 +41,18 @@ Script trả về số đếm thực tế cho mọi bảng trong database, danh 
 
 | Tên đăng nhập | Nhân viên | Vai trò | Mật khẩu |
 |---|---|---|---|
-| `admin` | Nguyễn Hoàng Minh | Quản trị viên | Chưa có mật khẩu database hợp lệ |
-| `letan.huong` | Trần Thu Hương | Lễ tân | Chưa có mật khẩu database hợp lệ |
-| `bacsi.thanh` | Phạm Đức Thành | Bác sĩ | Chưa có mật khẩu database hợp lệ |
-| `kho.phuc` | Bùi Văn Phúc | Nhân viên kho | Chưa có mật khẩu database hợp lệ |
-| `thungan.van` | Nguyễn Thị Vân | Thu ngân | Chưa có mật khẩu database hợp lệ |
-| `quanly.nam` | Đỗ Thành Nam | Quản lý phòng khám | Chưa có mật khẩu database hợp lệ |
+| `admin` | Nguyễn Hoàng Minh | Quản trị viên | `AdminDemo#2026` |
+| `letan.huong` | Trần Thu Hương | Lễ tân | `LeTanDemo#2026` |
+| `bacsi.thanh` | Phạm Đức Thành | Bác sĩ | `BacSiDemo#2026` |
+| `kho.phuc` | Bùi Văn Phúc | Nhân viên kho | `KhoDemo#2026` |
+| `thungan.van` | Nguyễn Thị Vân | Thu ngân | `ThuNganDemo#2026` |
+| `quanly.nam` | Đỗ Thành Nam | Quản lý phòng khám | `QuanLyDemo#2026` |
 
-### Cảnh báo xác thực — cần xử lý trước khi dùng thật
+Mật khẩu trên chỉ dành cho database demo. Hãy đổi trước khi dùng dữ liệu/máy chủ thật.
 
-Đã kiểm tra Java source: `view.auth.LoginFrame.signIn()` chỉ yêu cầu tên đăng nhập và mật khẩu không rỗng rồi mở giao diện demo; không đọc database, không xác minh tài khoản và không có thuật toán hash nào được triển khai. Vì vậy script **không tự tạo hash theo một thuật toán suy đoán**. Cột `TaiKhoan.MatKhauHash` nhận chuỗi đánh dấu `NOT-A-REAL-HASH-AUTHENTICATION-NOT-IMPLEMENTED`, không phải hash và không dùng được để xác thực.
+Ứng dụng dùng `auth.PasswordHasher`: `PBKDF2WithHmacSHA256`, 240.000 vòng lặp, salt ngẫu nhiên 16 byte và khóa dẫn xuất 256 bit. Các hash trong seed được tạo bởi đúng implementation này. Khi chạy seed, các tài khoản mẫu mới được chèn cùng hash; tài khoản seed từ bản cũ chỉ được cập nhật nếu vẫn còn chuỗi marker hash không hợp lệ. Hash/mật khẩu khác do người quản trị đặt không bị ghi đè.
 
-Để thử riêng giao diện hiện tại, có thể nhập tên đăng nhập ở bảng trên, nhập `Demo123!` (hoặc chuỗi bất kỳ không rỗng) và chọn vai trò ở danh sách demo. Đây **không phải thông tin đăng nhập database**; ứng dụng hiện không kiểm tra hai giá trị này với `TaiKhoan`. Trước khi nối đăng nhập thật, cần thống nhất và triển khai password verifier trong Java, sau đó thay các giá trị đánh dấu bằng hash tạo từ đúng verifier đó.
+Vai trò và quyền được nạp từ `TaiKhoanVaiTro`, `VaiTro`, `VaiTroQuyen`, `Quyen`. Đăng nhập chỉ thành công với tài khoản `HoatDong`, nhân viên đang làm/thu thử việc, có ít nhất một vai trò hoạt động và một quyền.
 
 ## Cách chạy bằng SQL Server Management Studio
 
@@ -67,9 +67,8 @@ Script chỉ được chạy sau `schema.sql`. Nếu lỗi xảy ra trong phần
 
 ## Bất thường và giới hạn phát hiện
 
-1. **Database và JDBC không khớp:** `schema.sql` tạo SQL Server `QuanLyPhongKhamThuCuc`, nhưng `config.DatabaseConnection` từ chối mọi URL không bắt đầu bằng `jdbc:mysql:`; `pom.xml` hiện có cả driver SQL Server và MySQL. Seed script là T-SQL cho SQL Server, nhưng ứng dụng hiện chưa thể kết nối schema này bằng cấu hình JDBC đang có.
-2. **Đăng nhập chưa nối database:** màn hình đăng nhập chỉ là mock; lựa chọn vai trò do người dùng chọn trên UI, không lấy từ `TaiKhoanVaiTro`. Seed quyền không tạo ra kiểm soát truy cập thực tế trong ứng dụng.
-3. **Không có quy tắc hash mật khẩu trong Java:** giữ marker không hợp lệ thay vì làm sai yêu cầu bằng cách tự chọn BCrypt/SHA hoặc thuật toán khác.
-4. **Tỷ lệ BHYT trong dữ liệu mẫu:** thẻ ghi `MucHuong = 80`; phiếu tính phí lấy tỷ lệ này làm phần BHYT minh họa, bệnh nhân thanh toán phần còn lại. Đây là quy ước demo, không thay thế việc tính quyền lợi theo thẻ/quy định thực tế.
-5. **Ràng buộc số học chưa có trong schema:** schema khai báo các cột tiền nhưng không có `CHECK` đảm bảo tổng chi tiết bằng header hoặc số tiền giao dịch bằng số phải trả. Seed tạo các giá trị khớp và in đối chiếu; quy tắc này hiện được đảm bảo bởi dữ liệu seed chứ không phải constraint database.
-6. **Kết quả khám, thẻ BHYT, nhật ký và danh tính là giả lập:** thông tin xác thực BHYT không truy cập cổng thật; các chứng chỉ, số thẻ và định danh được đánh dấu `DEMO`.
+1. **Cấu hình SQL Server cục bộ:** `db.properties` không được seed chỉnh sửa; cần kiểm tra tên database/instance và tài khoản SQL Server trong cấu hình local. Mẫu `db.properties.example` dùng `QuanLyPhongKhamThuCuc`.
+2. **Các module nghiệp vụ khác vẫn là UI khung:** lớp DAO/authorization ngăn luồng điều hướng trái quyền; các module chưa có controller/DAO nghiệp vụ nên cần gọi `AuthorizationService.requirePermission(session, "MA_QUYEN")` ở đầu mỗi use case/service khi triển khai tiếp.
+3. **Tỷ lệ BHYT trong dữ liệu mẫu:** thẻ ghi `MucHuong = 80`; phiếu tính phí lấy tỷ lệ này làm phần BHYT minh họa, bệnh nhân thanh toán phần còn lại. Đây là quy ước demo, không thay thế việc tính quyền lợi theo thẻ/quy định thực tế.
+4. **Ràng buộc số học chưa có trong schema:** schema khai báo các cột tiền nhưng không có `CHECK` đảm bảo tổng chi tiết bằng header hoặc số tiền giao dịch bằng số phải trả. Seed tạo các giá trị khớp và in đối chiếu; quy tắc này hiện được đảm bảo bởi dữ liệu seed chứ không phải constraint database.
+5. **Kết quả khám, thẻ BHYT, nhật ký và danh tính là giả lập:** thông tin xác thực BHYT không truy cập cổng thật; các chứng chỉ, số thẻ và định danh được đánh dấu `DEMO`.

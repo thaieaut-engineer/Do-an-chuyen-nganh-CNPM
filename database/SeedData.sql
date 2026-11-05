@@ -1,7 +1,8 @@
 /*
     Du lieu mau cho schema QuanLyPhongKhamThuCuc (SQL Server).
     Script chi INSERT, khong thay doi schema va co the chay lai.
-    MatKhauHash dung chuoi danh dau vi source hien tai chua co verifier/hash.
+    Tai khoan mau dung PBKDF2-HMAC-SHA256 theo auth.PasswordHasher.
+    Marker cu chi duoc thay the cho cac tai khoan seed con giu marker nay.
 */
 IF DB_ID(N'QuanLyPhongKhamThuCuc') IS NULL
 BEGIN
@@ -86,6 +87,14 @@ DECLARE @PurchaseItems TABLE (
 DECLARE @ServicePrices TABLE (
     MaDichVu VARCHAR(20) PRIMARY KEY,
     DonGia DECIMAL(14,2)
+);
+
+DECLARE @AccountSeed TABLE (
+    TenDangNhap VARCHAR(80) PRIMARY KEY,
+    MaNhanVien VARCHAR(20),
+    EmailKhoiPhuc VARCHAR(120),
+    MatKhauHash VARCHAR(255),
+    MaVaiTro VARCHAR(20)
 );
 
 BEGIN TRY
@@ -221,24 +230,28 @@ BEGIN TRY
         WHERE x.MaVaiTro = v.MaVaiTro AND x.MaQuyen = v.MaQuyen
     );
 
+    INSERT INTO @AccountSeed VALUES
+    ('admin', 'NV001', 'admin@thucuc-demo.vn', 'pbkdf2-sha256$240000$XYNlAEL7hyn5jXb9L3iN_g$IJbZBuncxRhGIpo_PfIsdsBgIJL1GiS8egyVBx7sJzM', 'VT-ADMIN'),
+    ('letan.huong', 'NV002', 'huong.le-tan@thucuc-demo.vn', 'pbkdf2-sha256$240000$p5QRSGx5HGxP6gshga37Bg$9nvNhkNVJHXdxjxHpAauDkb5VZKlAyWSilP8r4ZawDc', 'VT-LETAN'),
+    ('bacsi.thanh', 'NV003', 'thanh.pham@thucuc-demo.vn', 'pbkdf2-sha256$240000$M-oa7_m3V1idu5ZSFEro8g$ytOPU4ANQ5xjTluwQWSY22sJT-qJC35yRqV7BgqTvI0', 'VT-BACSI'),
+    ('kho.phuc', 'NV009', 'phuc.kho@thucuc-demo.vn', 'pbkdf2-sha256$240000$WZ6KNQRHdP3ea2Gq0UD5xQ$U_5BmIOhI9RH4DnfYaxzn3WfMVzGGMqs-Gs7SUotUnM', 'VT-KHO'),
+    ('thungan.van', 'NV010', 'van.thungan@thucuc-demo.vn', 'pbkdf2-sha256$240000$cwMz-vanBEXxEz17EJzCGg$cx8S9Vu5eK5AjhuOeXSvBdTqQgBsrtTWXO_nV-vuhO4', 'VT-THUNGAN'),
+    ('quanly.nam', 'NV011', 'nam.quanly@thucuc-demo.vn', 'pbkdf2-sha256$240000$XLr7LdWqqVu-CVqqt6_C9Q$sG3j4KfIBshuXvBtAaEMCo4b_DElhr7ZchB8omPunQo', 'VT-QUANLY');
+
+    UPDATE a
+    SET MatKhauHash = s.MatKhauHash
+    FROM TaiKhoan a
+    JOIN @AccountSeed s ON s.TenDangNhap = a.TenDangNhap
+    WHERE a.MatKhauHash = @InvalidPasswordMarker;
+
     INSERT INTO TaiKhoan (TenDangNhap, MatKhauHash, MaNhanVien, EmailKhoiPhuc, TrangThai)
-    SELECT v.TenDangNhap, @InvalidPasswordMarker, v.MaNhanVien, v.EmailKhoiPhuc, N'HoatDong'
-    FROM (VALUES
-        ('admin', 'NV001', 'admin@thucuc-demo.vn'),
-        ('letan.huong', 'NV002', 'huong.le-tan@thucuc-demo.vn'),
-        ('bacsi.thanh', 'NV003', 'thanh.pham@thucuc-demo.vn'),
-        ('kho.phuc', 'NV009', 'phuc.kho@thucuc-demo.vn'),
-        ('thungan.van', 'NV010', 'van.thungan@thucuc-demo.vn'),
-        ('quanly.nam', 'NV011', 'nam.quanly@thucuc-demo.vn')
-    ) v(TenDangNhap, MaNhanVien, EmailKhoiPhuc)
-    WHERE NOT EXISTS (SELECT 1 FROM TaiKhoan a WHERE a.TenDangNhap = v.TenDangNhap);
+    SELECT s.TenDangNhap, s.MatKhauHash, s.MaNhanVien, s.EmailKhoiPhuc, N'HoatDong'
+    FROM @AccountSeed s
+    WHERE NOT EXISTS (SELECT 1 FROM TaiKhoan a WHERE a.TenDangNhap = s.TenDangNhap);
 
     INSERT INTO TaiKhoanVaiTro (MaTaiKhoan, MaVaiTro, NguoiGan)
     SELECT a.MaTaiKhoan, v.MaVaiTro, adminAccount.MaTaiKhoan
-    FROM (VALUES
-        ('admin', 'VT-ADMIN'), ('letan.huong', 'VT-LETAN'), ('bacsi.thanh', 'VT-BACSI'),
-        ('kho.phuc', 'VT-KHO'), ('thungan.van', 'VT-THUNGAN'), ('quanly.nam', 'VT-QUANLY')
-    ) v(TenDangNhap, MaVaiTro)
+    FROM @AccountSeed v
     JOIN TaiKhoan a ON a.TenDangNhap = v.TenDangNhap
     CROSS JOIN (SELECT MaTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'admin') adminAccount
     WHERE NOT EXISTS (
@@ -958,9 +971,9 @@ DEALLOCATE table_cursor;
 EXEC sys.sp_executesql @CountSql;
 
 SELECT a.TenDangNhap, n.HoTen, r.TenVaiTro, a.TrangThai,
-       CASE WHEN a.MatKhauHash = 'NOT-A-REAL-HASH-AUTHENTICATION-NOT-IMPLEMENTED'
-            THEN N'Chưa thể xác thực DB: source chưa có password verifier'
-            ELSE N'Có giá trị MatKhauHash'
+       CASE WHEN a.MatKhauHash LIKE 'pbkdf2-sha256$%'
+            THEN N'PBKDF2-HMAC-SHA256'
+            ELSE N'Hash chưa được hỗ trợ/cấu hình'
        END AS TrangThaiMatKhau
 FROM TaiKhoan a
 LEFT JOIN NhanVien n ON n.MaNhanVien = a.MaNhanVien

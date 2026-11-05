@@ -26,8 +26,8 @@ public class DatabaseConnection {
         if (url == null || url.isBlank() || user == null || password == null) {
             throw new SQLException("Thiếu db.url, db.user hoặc db.password trong db.properties.");
         }
-        if (!url.startsWith("jdbc:mysql:")) {
-            throw new SQLException("db.url phải là JDBC URL MySQL, bắt đầu bằng jdbc:mysql:.");
+        if (!url.startsWith("jdbc:sqlserver:")) {
+            throw new SQLException("db.url phải là JDBC URL SQL Server, bắt đầu bằng jdbc:sqlserver:.");
         }
         ensureDriverLoaded();
         return DriverManager.getConnection(url, user, password);
@@ -42,10 +42,10 @@ public class DatabaseConnection {
                 return;
             }
             try {
-                Class.forName("com.mysql.cj.jdbc.Driver");
+                Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
                 driverLoaded = true;
             } catch (ClassNotFoundException e) {
-                throw new SQLException("Không tìm thấy MySQL JDBC Driver.", e);
+                throw new SQLException("Không tìm thấy Microsoft SQL Server JDBC Driver.", e);
             }
         }
     }

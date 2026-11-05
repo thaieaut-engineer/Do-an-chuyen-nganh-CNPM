@@ -5,11 +5,12 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import bus.auth.AuthorizationBUS;
+import model.auth.AuthenticatedSession;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -31,9 +32,10 @@ final class SidebarPanel extends JPanel {
     private final Map<String, JButton> buttons = new LinkedHashMap<>();
     private final List<JLabel> sectionLabels = new ArrayList<>();
     private final List<String> availablePages = new ArrayList<>();
+    private final AuthorizationBUS authorizationBUS = new AuthorizationBUS();
     private boolean collapsed;
 
-    SidebarPanel(String role, Consumer<String> onNavigate) {
+    SidebarPanel(AuthenticatedSession session, Consumer<String> onNavigate) {
         super(new BorderLayout());
         setBackground(MainFrame.NAVY);
         setPreferredSize(new Dimension(248, 0));
@@ -44,14 +46,14 @@ final class SidebarPanel extends JPanel {
 
         menu.setOpaque(false);
         menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
-        buildMenu(role, onNavigate);
+        buildMenu(session, onNavigate);
         JScrollPane menuScroll = new JScrollPane(menu);
         menuScroll.setBorder(null);
         menuScroll.setOpaque(false);
         menuScroll.getViewport().setOpaque(false);
         menuScroll.getVerticalScrollBar().setUnitIncrement(16);
         add(menuScroll, BorderLayout.CENTER);
-        add(createFooter(), BorderLayout.SOUTH);
+        add(createFooter(session), BorderLayout.SOUTH);
     }
 
     List<String> getAvailablePages() {
@@ -111,7 +113,7 @@ final class SidebarPanel extends JPanel {
         return brand;
     }
 
-    private JPanel createFooter() {
+    private JPanel createFooter(AuthenticatedSession session) {
         JPanel footer = new JPanel(new BorderLayout(10, 0));
         footer.setOpaque(false);
         footer.setBorder(new EmptyBorder(15, 8, 3, 5));
@@ -123,12 +125,14 @@ final class SidebarPanel extends JPanel {
         avatar.setPreferredSize(new Dimension(36, 36));
         footerText.setOpaque(false);
         footerText.setLayout(new BoxLayout(footerText, BoxLayout.Y_AXIS));
-        JLabel preview = new JLabel("Giao diện demo");
+        JLabel preview = new JLabel(session.getEmployeeName());
         preview.setForeground(Color.WHITE);
         preview.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        JLabel role = new JLabel("Mock Data");
+        preview.setToolTipText(session.getEmployeeName());
+        JLabel role = new JLabel(session.getDisplayRole());
         role.setForeground(MUTED_NAV);
         role.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        role.setToolTipText(session.getDisplayRole());
         footerText.add(preview);
         footerText.add(Box.createVerticalStrut(3));
         footerText.add(role);
@@ -137,52 +141,48 @@ final class SidebarPanel extends JPanel {
         return footer;
     }
 
-    private void buildMenu(String role, Consumer<String> onNavigate) {
+    private void buildMenu(AuthenticatedSession session, Consumer<String> onNavigate) {
         List<MenuItem> items = List.of(
-                new MenuItem("KHÁM BỆNH", null, SetOf.all()),
-                new MenuItem("Tổng quan", "dashboard", SetOf.all()),
-                new MenuItem("Bệnh nhân", "patients", SetOf.roles("Quản trị viên", "Lễ tân",
-                        "Bác sĩ", "Thu ngân")),
-                new MenuItem("Lịch hẹn", "calendar", SetOf.roles("Quản trị viên", "Lễ tân",
-                        "Bác sĩ")),
-                new MenuItem("Tiếp nhận bệnh nhân", "add", SetOf.roles("Quản trị viên", "Lễ tân")),
-                new MenuItem("Lượt khám", "medical", SetOf.roles("Quản trị viên", "Lễ tân", "Bác sĩ")),
-                new MenuItem("Phiếu khám", "clipboard", SetOf.roles("Quản trị viên", "Bác sĩ")),
-                new MenuItem("Chỉ định dịch vụ", "search", SetOf.roles("Quản trị viên", "Bác sĩ")),
-                new MenuItem("Kê đơn thuốc", "medicine", SetOf.roles("Quản trị viên", "Bác sĩ")),
-                new MenuItem("VẬN HÀNH", null, SetOf.all()),
-                new MenuItem("Danh mục thuốc", "medicine", SetOf.roles("Quản trị viên", "Thủ kho / Dược sĩ")),
-                new MenuItem("Kho thuốc", "box", SetOf.roles("Quản trị viên", "Thủ kho / Dược sĩ")),
-                new MenuItem("Kho hóa chất", "flask", SetOf.roles("Quản trị viên", "Thủ kho / Dược sĩ")),
-                new MenuItem("Viện phí", "invoice", SetOf.roles("Quản trị viên", "Thu ngân")),
-                new MenuItem("Hóa đơn", "clipboard", SetOf.roles("Quản trị viên", "Thu ngân")),
-                new MenuItem("Thanh toán", "wallet", SetOf.roles("Quản trị viên", "Thu ngân")),
-                new MenuItem("Bảo hiểm y tế", "shield", SetOf.roles("Quản trị viên", "Thu ngân")),
-                new MenuItem("QUẢN TRỊ", null, SetOf.all()),
-                new MenuItem("Nhân viên", "patients", SetOf.roles("Quản trị viên", "Quản lý phòng khám")),
-                new MenuItem("Bác sĩ", "doctor", SetOf.roles("Quản trị viên", "Quản lý phòng khám")),
-                new MenuItem("Lịch làm việc", "calendar", SetOf.roles("Quản trị viên", "Quản lý phòng khám")),
-                new MenuItem("Thiết bị", "equipment", SetOf.roles("Quản trị viên", "Quản lý phòng khám")),
-                new MenuItem("Đánh giá nhân viên", "star",
-                        SetOf.roles("Quản trị viên", "Quản lý phòng khám")),
-                new MenuItem("Tài khoản", "user", SetOf.roles("Quản trị viên")),
-                new MenuItem("Phân quyền", "key", SetOf.roles("Quản trị viên")),
-                new MenuItem("Cấu hình hệ thống", "settings", SetOf.roles("Quản trị viên")),
-                new MenuItem("Nhật ký hệ thống", "report", SetOf.roles("Quản trị viên")),
-                new MenuItem("Thông báo", "bell", SetOf.roles("Quản trị viên")),
-                new MenuItem("Báo cáo", "report", SetOf.roles("Quản trị viên", "Quản lý phòng khám"))
+                new MenuItem("KHÁM BỆNH", null),
+                new MenuItem("Tổng quan", "dashboard"),
+                new MenuItem("Bệnh nhân", "patients"),
+                new MenuItem("Lịch hẹn", "calendar"),
+                new MenuItem("Tiếp nhận bệnh nhân", "add"),
+                new MenuItem("Lượt khám", "medical"),
+                new MenuItem("Phiếu khám", "clipboard"),
+                new MenuItem("Chỉ định dịch vụ", "search"),
+                new MenuItem("Kê đơn thuốc", "medicine"),
+                new MenuItem("VẬN HÀNH", null),
+                new MenuItem("Danh mục thuốc", "medicine"),
+                new MenuItem("Kho thuốc", "box"),
+                new MenuItem("Kho hóa chất", "flask"),
+                new MenuItem("Viện phí", "invoice"),
+                new MenuItem("Hóa đơn", "clipboard"),
+                new MenuItem("Thanh toán", "wallet"),
+                new MenuItem("Bảo hiểm y tế", "shield"),
+                new MenuItem("QUẢN TRỊ", null),
+                new MenuItem("Nhân viên", "patients"),
+                new MenuItem("Bác sĩ", "doctor"),
+                new MenuItem("Lịch làm việc", "calendar"),
+                new MenuItem("Thiết bị", "equipment"),
+                new MenuItem("Đánh giá nhân viên", "star"),
+                new MenuItem("Tài khoản", "user"),
+                new MenuItem("Phân quyền", "key"),
+                new MenuItem("Cấu hình hệ thống", "settings"),
+                new MenuItem("Nhật ký hệ thống", "report"),
+                new MenuItem("Thông báo", "bell"),
+                new MenuItem("Báo cáo", "report")
         );
-        boolean isAdmin = role.equals("Quản trị viên");
         for (MenuItem item : items) {
             if (item.icon == null) {
-                if (isAdmin || items.stream().anyMatch(candidate ->
-                        candidate.icon != null && candidate.roles.contains(role)
+                if (items.stream().anyMatch(candidate ->
+                        candidate.icon != null && authorizationBUS.canAccessPage(session, candidate.label)
                                 && belongsToSection(candidate, item.label, items))) {
                     menu.add(sectionLabel(item.label));
                 }
                 continue;
             }
-            if (!item.roles.contains(role)) {
+            if (!authorizationBUS.canAccessPage(session, item.label)) {
                 continue;
             }
             JButton button = new JButton(item.label, new AppIcon(item.icon, MUTED_NAV, 17));
@@ -232,23 +232,10 @@ final class SidebarPanel extends JPanel {
     private static final class MenuItem {
         private final String label;
         private final String icon;
-        private final List<String> roles;
 
-        private MenuItem(String label, String icon, List<String> roles) {
+        private MenuItem(String label, String icon) {
             this.label = label;
             this.icon = icon;
-            this.roles = roles;
-        }
-    }
-
-    private static final class SetOf {
-        private static List<String> all() {
-            return Arrays.asList("Quản trị viên", "Lễ tân", "Bác sĩ",
-                    "Thủ kho / Dược sĩ", "Thu ngân", "Quản lý phòng khám");
-        }
-
-        private static List<String> roles(String... roles) {
-            return Arrays.asList(roles);
         }
     }
 }

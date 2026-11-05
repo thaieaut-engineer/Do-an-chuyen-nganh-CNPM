@@ -1,5 +1,6 @@
 package view;
 
+import model.auth.AuthenticatedSession;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -21,7 +22,7 @@ import view.component.AppIcon;
 final class HeaderPanel extends JPanel {
     private final JLabel pageTitle = new JLabel("Tổng quan");
 
-    HeaderPanel(String username, String role, List<String> pages,
+    HeaderPanel(AuthenticatedSession session, List<String> pages,
             Consumer<String> onNavigate, Runnable onLogout, Runnable onToggleSidebar) {
         super(new BorderLayout(18, 0));
         setBackground(Color.WHITE);
@@ -54,21 +55,24 @@ final class HeaderPanel extends JPanel {
         JButton notifications = iconButton("bell", "Thông báo", 18);
         notifications.addActionListener(this::showNotifications);
 
-        JButton account = new JButton(username, new AppIcon("user", MainFrame.BLUE, 17));
-        account.setToolTipText(role);
+        JButton account = new JButton(session.getEmployeeName(), new AppIcon("user", MainFrame.BLUE, 17));
+        account.setToolTipText(session.getDisplayRole());
         account.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         account.setForeground(MainFrame.TEXT);
         account.setBackground(Color.WHITE);
         account.setBorder(new EmptyBorder(6, 6, 6, 4));
         account.setIconTextGap(8);
         account.setFocusPainted(false);
-        account.addActionListener(event -> showAccountMenu(account, username, role, onLogout));
+        account.addActionListener(event -> showAccountMenu(
+                account, session.getEmployeeName(), session.getDisplayRole(), onLogout));
 
         JPanel actions = new JPanel(new BorderLayout(14, 0));
         actions.setOpaque(false);
         JPanel right = new JPanel(new BorderLayout(12, 0));
         right.setOpaque(false);
-        right.add(notifications, BorderLayout.WEST);
+        if (session.hasPermission("TAIKHOAN_QUANLY")) {
+            right.add(notifications, BorderLayout.WEST);
+        }
         right.add(account, BorderLayout.EAST);
         actions.add(searchGroup, BorderLayout.WEST);
         actions.add(right, BorderLayout.EAST);

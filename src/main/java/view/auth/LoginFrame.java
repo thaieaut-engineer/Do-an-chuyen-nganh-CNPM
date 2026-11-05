@@ -1,5 +1,7 @@
 package view.auth;
 
+import bus.auth.AuthenticationBUS;
+import bus.auth.AuthenticationException;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -11,7 +13,6 @@ import java.awt.Insets;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -19,11 +20,18 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
+import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import model.auth.AuthenticatedSession;
 import view.MainFrame;
 import view.component.AppIcon;
 
 public final class LoginFrame extends JFrame {
+    private static final Logger LOGGER = Logger.getLogger(LoginFrame.class.getName());
     private static final Color BLUE = new Color(0x02B5AB);
     private static final Color TEXT = new Color(34, 48, 67);
     private static final Color MUTED = new Color(119, 132, 149);
@@ -31,13 +39,10 @@ public final class LoginFrame extends JFrame {
 
     private final JTextField username = new JTextField();
     private final JPasswordField password = new JPasswordField();
+    private final AuthenticationBUS authenticationBUS = new AuthenticationBUS();
     private JButton loginButton;
     private JCheckBox remember;
     private static String rememberedUsername = "";
-    private final JComboBox<String> role = new JComboBox<>(new String[]{
-        "Quản trị viên", "Lễ tân", "Bác sĩ",
-        "Thủ kho / Dược sĩ", "Thu ngân", "Quản lý phòng khám"
-    });
     private final JLabel error = new JLabel(" ");
 
     public LoginFrame() {
@@ -97,9 +102,9 @@ public final class LoginFrame extends JFrame {
                 + "và hoạt động phòng khám trên một nền tảng.</html>");
         description.setForeground(new Color(220, 231, 244));
         description.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        JLabel demo = new JLabel("GIAO DIỆN BẢN DEMO · MOCK DATA");
-        demo.setForeground(new Color(172, 199, 224));
-        demo.setFont(new Font("Segoe UI", Font.BOLD, 9));
+        JLabel securityInfo = new JLabel("KẾT NỐI SQL SERVER · PHÂN QUYỀN RBAC");
+        securityInfo.setForeground(new Color(172, 199, 224));
+        securityInfo.setFont(new Font("Segoe UI", Font.BOLD, 9));
 
         content.add(mark);
         content.add(Box.vertical(24));
@@ -109,7 +114,7 @@ public final class LoginFrame extends JFrame {
         content.add(Box.vertical(22));
         content.add(description);
         content.add(Box.vertical(28));
-        content.add(demo);
+        content.add(securityInfo);
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 1;
@@ -125,7 +130,7 @@ public final class LoginFrame extends JFrame {
         fields.setOpaque(false);
         fields.setLayout(new javax.swing.BoxLayout(fields, javax.swing.BoxLayout.Y_AXIS));
 
-        JLabel title = new JLabel("Chào mừng trở lại");
+        JLabel title = new JLabel("Đăng nhập hệ thống");
         title.setForeground(TEXT);
         title.setFont(new Font("Segoe UI", Font.BOLD, 24));
         JLabel subtitle = new JLabel("Đăng nhập để tiếp tục vào hệ thống");
@@ -158,11 +163,6 @@ public final class LoginFrame extends JFrame {
         fields.add(passwordRow);
         fields.add(Box.vertical(15));
 
-        fields.add(fieldLabel("Vai trò demo"));
-        role.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        role.setPreferredSize(new Dimension(0, 38));
-        fields.add(Box.vertical(7));
-        fields.add(role);
         fields.add(Box.vertical(12));
 
         JPanel options = new JPanel(new BorderLayout());
@@ -191,7 +191,7 @@ public final class LoginFrame extends JFrame {
         loginButton = createLoginButton();
         fields.add(loginButton);
         fields.add(Box.vertical(12));
-        JLabel note = new JLabel("Bản demo: mọi tài khoản có đủ thông tin đều được chấp nhận.");
+        JLabel note = new JLabel("Sử dụng tài khoản được quản trị viên cấp.");
         note.setForeground(MUTED);
         note.setFont(new Font("Segoe UI", Font.PLAIN, 10));
         fields.add(note);
@@ -219,13 +219,64 @@ public final class LoginFrame extends JFrame {
 
     private void signIn() {
         String user = username.getText().trim();
-        if (user.isEmpty() || password.getPassword().length == 0) {
-            error.setText("Vui lòng nhập tên đăng nhập và mật khẩu.");
+        char[] passwordValue = password.getPassword();
+        if (user.isEmpty() || passwordValue.length == 0) {
+            Arrays.fill(passwordValue, '\0');
+            showMessage("Vui lòng nhập tên đăng nhập và mật khẩu.", false);
             return;
         }
-        rememberedUsername = remember.isSelected() ? user : "";
-        new MainFrame(user, (String) role.getSelectedItem()).setVisible(true);
-        dispose();
+
+        setBusy(true);
+        showMessage("Đang xác thực tài khoản...", true);
+        new SwingWorker<AuthenticatedSession, Void>() {
+            @Override
+            protected AuthenticatedSession doInBackground() throws Exception {
+                try {
+                    return authenticationBUS.authenticate(user, passwordValue);
+                } finally {
+                    Arrays.fill(passwordValue, '\0');
+                }
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    AuthenticatedSession session = get();
+                    rememberedUsername = remember.isSelected() ? user : "";
+                    new MainFrame(session).setVisible(true);
+                    dispose();
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    showMessage("Quá trình đăng nhập bị gián đoạn. Vui lòng thử lại.", false);
+                } catch (ExecutionException exception) {
+                    Throwable cause = exception.getCause();
+                    if (cause instanceof AuthenticationException) {
+                        showMessage(cause.getMessage(), false);
+                    } else {
+                        LOGGER.log(Level.SEVERE, "Unexpected error while signing in.", cause);
+                        showMessage("Không thể hoàn tất đăng nhập. Vui lòng thử lại.", false);
+                    }
+                } finally {
+                    if (isDisplayable()) {
+                        password.setText("");
+                        setBusy(false);
+                    }
+                }
+            }
+        }.execute();
+    }
+
+    private void setBusy(boolean busy) {
+        username.setEnabled(!busy);
+        password.setEnabled(!busy);
+        remember.setEnabled(!busy);
+        loginButton.setEnabled(!busy);
+        loginButton.setText(busy ? "Đang xử lý..." : "Đăng nhập");
+    }
+
+    private void showMessage(String message, boolean processing) {
+        error.setForeground(processing ? BLUE : new Color(190, 62, 62));
+        error.setText(message);
     }
 
     private void togglePassword(JButton toggle) {

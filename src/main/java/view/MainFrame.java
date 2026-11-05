@@ -1,15 +1,18 @@
 package view;
 
 import com.formdev.flatlaf.FlatLightLaf;
+import bus.auth.AuthorizationBUS;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.util.List;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import model.auth.AuthenticatedSession;
 
 public class MainFrame extends JFrame {
     static final Color NAVY = new Color(24, 43, 69);
@@ -20,30 +23,22 @@ public class MainFrame extends JFrame {
     static final Color MUTED = new Color(119, 132, 149);
     static final Color BORDER = new Color(229, 234, 240);
 
-    private final String username;
-    private final String userRole;
+    private final AuthenticatedSession session;
+    private final AuthorizationBUS authorizationBUS = new AuthorizationBUS();
     private final SidebarPanel sidebar;
     private final HeaderPanel header;
     private final JPanel pageHost = new JPanel(new BorderLayout());
     private final List<String> availablePages;
 
-    /**
-     * Constructor mặc định dùng khi test giao diện trực tiếp hoặc khởi chạy độc lập
-     */
-    public MainFrame() {
-        this("AdminTest", "Quản trị viên");
-    }
-
-    /**
-     * Constructor chính khi đăng nhập từ LoginFrame
-     */
-    public MainFrame(String username, String userRole) {
+    public MainFrame(AuthenticatedSession session) {
         super("Phòng khám Thu Cúc | Quản lý phòng khám");
-        this.username = username;
-        this.userRole = userRole;
-        sidebar = new SidebarPanel(userRole, this::showPage);
+        if (session == null) {
+            throw new IllegalArgumentException("Không thể mở MainFrame khi chưa xác thực.");
+        }
+        this.session = session;
+        sidebar = new SidebarPanel(session, this::showPage);
         availablePages = sidebar.getAvailablePages();
-        header = new HeaderPanel(username, userRole, availablePages,
+        header = new HeaderPanel(session, availablePages,
                 this::showPage, this::logout, sidebar::toggleCollapsed);
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -75,16 +70,22 @@ public class MainFrame extends JFrame {
                 UIManager.put("Component.focusColor", new Color(0x02B5AB));
                 UIManager.put("Component.focusedBorderColor", new Color(0x02B5AB));
                 
-                // Khởi chạy trực tiếp MainFrame với dữ liệu giả lập để test
-                new MainFrame("admin", "Quản trị viên").setVisible(true);
+                new view.auth.LoginFrame().setVisible(true);
             } catch (Exception e) {
-                e.printStackTrace();
+                System.err.println("Không thể khởi động giao diện: " + e.getMessage());
             }
         });
     }
 
     private void showPage(String title) {
         if (!availablePages.contains(title)) {
+            return;
+        }
+        try {
+            authorizationBUS.requirePageAccess(session, title);
+        } catch (SecurityException exception) {
+            JOptionPane.showMessageDialog(this, exception.getMessage(),
+                    "Không đủ quyền", JOptionPane.WARNING_MESSAGE);
             return;
         }
         sidebar.setActivePage(title);
@@ -104,21 +105,6 @@ public class MainFrame extends JFrame {
 
     private void logout() {
         dispose();
-        try {
-            // Mở lại màn hình Login khi logout
-            Class<?> loginClass = Class.forName("view.auth.LoginFrame");
-            JFrame loginFrame = (JFrame) loginClass.getDeclaredConstructor().newInstance();
-            loginFrame.setVisible(true);
-        } catch (Exception e) {
-            System.err.println("Không thể mở LoginFrame: " + e.getMessage());
-        }
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getUserRole() {
-        return userRole;
+        new view.auth.LoginFrame().setVisible(true);
     }
 }
