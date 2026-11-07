@@ -5,6 +5,7 @@ import bus.auth.AuthenticationBUS;
 import bus.auth.AuthenticationException;
 import bus.auth.AuthorizationBUS;
 import bus.dashboard.DashboardBUS;
+import bus.patient.BenhNhanBUS;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -32,10 +33,12 @@ public class MainFrame extends JFrame {
     private final AuthenticationBUS authenticationBUS = new AuthenticationBUS();
     private final AuthorizationBUS authorizationBUS = new AuthorizationBUS();
     private final DashboardBUS dashboardBUS = new DashboardBUS();
+    private final BenhNhanBUS patientBUS = new BenhNhanBUS();
     private final SidebarPanel sidebar;
     private final HeaderPanel header;
     private final JPanel pageHost = new JPanel(new BorderLayout());
     private final List<String> availablePages;
+    private PatientPanel patientPanel;
     private boolean logoutStarted;
 
     public MainFrame(AuthenticatedSession session) {
@@ -105,10 +108,20 @@ public class MainFrame extends JFrame {
         }
         sidebar.setActivePage(title);
         header.setPageTitle(title);
-        JPanel page = title.equals("Tổng quan")
-                ? new DashboardPanel(session, dashboardBUS,
-                        this::showPage, availablePages::contains)
-                : new ModulePanel(title);
+        JPanel page;
+        if (title.equals("Tổng quan")) {
+            page = new DashboardPanel(session, dashboardBUS,
+                    this::showPage, availablePages::contains);
+        } else if (title.equals("Bệnh nhân")) {
+            if (patientPanel == null) {
+                patientPanel = new PatientPanel(session, patientBUS);
+            } else {
+                patientPanel.refreshData();
+            }
+            page = patientPanel;
+        } else {
+            page = new ModulePanel(title);
+        }
         JScrollPane scrollPane = new JScrollPane(page);
         scrollPane.setBorder(null);
         scrollPane.getVerticalScrollBar().setUnitIncrement(18);
