@@ -4,6 +4,7 @@ import com.formdev.flatlaf.FlatLightLaf;
 import bus.auth.AuthenticationBUS;
 import bus.auth.AuthenticationException;
 import bus.auth.AuthorizationBUS;
+import bus.appointment.LichHenBUS;
 import bus.dashboard.DashboardBUS;
 import bus.patient.BenhNhanBUS;
 import java.awt.BorderLayout;
@@ -32,6 +33,7 @@ public class MainFrame extends JFrame {
     private final AuthenticatedSession session;
     private final AuthenticationBUS authenticationBUS = new AuthenticationBUS();
     private final AuthorizationBUS authorizationBUS = new AuthorizationBUS();
+    private final LichHenBUS appointmentBUS = new LichHenBUS();
     private final DashboardBUS dashboardBUS = new DashboardBUS();
     private final BenhNhanBUS patientBUS = new BenhNhanBUS();
     private final SidebarPanel sidebar;
@@ -39,6 +41,7 @@ public class MainFrame extends JFrame {
     private final JPanel pageHost = new JPanel(new BorderLayout());
     private final List<String> availablePages;
     private PatientPanel patientPanel;
+    private AppointmentPanel appointmentPanel;
     private boolean logoutStarted;
 
     public MainFrame(AuthenticatedSession session) {
@@ -119,6 +122,14 @@ public class MainFrame extends JFrame {
                 patientPanel.refreshData();
             }
             page = patientPanel;
+        } else if (title.equals("Lịch hẹn")) {
+            if (appointmentPanel == null) {
+                appointmentPanel = new AppointmentPanel(
+                        session, appointmentBUS, patientBUS);
+            } else {
+                appointmentPanel.refreshData();
+            }
+            page = appointmentPanel;
         } else {
             page = new ModulePanel(title);
         }

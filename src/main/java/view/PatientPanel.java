@@ -201,7 +201,7 @@ final class PatientPanel extends JPanel {
         JScrollPane scroll = new JScrollPane(table);
         scroll.setBorder(BorderFactory.createLineBorder(MainFrame.BORDER));
         scroll.getViewport().setBackground(Color.WHITE);
-        scroll.setPreferredSize(new Dimension(0, 470));
+        scroll.setPreferredSize(new Dimension(0, 360));
         card.add(scroll, BorderLayout.CENTER);
         card.add(createFooter(), BorderLayout.SOUTH);
         return card;
@@ -357,6 +357,7 @@ final class PatientPanel extends JPanel {
                     loading = false;
                     refreshButton.setEnabled(true);
                     clearSearchButton.setEnabled(true);
+                    updatePaginationControls();
                     updateSelectionActions();
                     boolean reload = reloadAfterLoad;
                     reloadAfterLoad = false;
@@ -384,12 +385,11 @@ final class PatientPanel extends JPanel {
         totalPages = page.totalPages();
         pageLabel.setText("Trang " + (page.page() + 1) + " / " + totalPages);
         resultCount.setText(page.totalCount() + " bệnh nhân");
-        previousButton.setEnabled(page.page() > 0);
-        nextButton.setEnabled(page.page() + 1 < totalPages);
     }
 
     private void handleLoadFailure(String error, Throwable cause) {
         tableModel.setRowCount(0);
+        currentPage = 0;
         totalPages = 1;
         pageLabel.setText("Trang 1 / 1");
         resultCount.setText("Không tải được dữ liệu");
@@ -398,6 +398,11 @@ final class PatientPanel extends JPanel {
         if (!(cause instanceof PatientException)) {
             LOGGER.log(Level.SEVERE, "Unexpected error while loading patients.", cause);
         }
+    }
+
+    private void updatePaginationControls() {
+        previousButton.setEnabled(!loading && currentPage > 0);
+        nextButton.setEnabled(!loading && currentPage + 1 < totalPages);
     }
 
     private void showSelectedPatient(PatientDialog.Mode mode) {

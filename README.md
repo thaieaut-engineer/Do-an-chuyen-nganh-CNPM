@@ -534,7 +534,7 @@ Sau khi chạy `database/SeedData.sql`, có thể dùng các tài khoản demo s
 - Vai trò và quyền được nạp từ `TaiKhoanVaiTro`, `VaiTro`, `VaiTroQuyen` và `Quyen`. Sidebar chỉ hiển thị trang người dùng có quyền; MainFrame kiểm tra lại quyền khi điều hướng.
 - Menu tài khoản trên HeaderPanel cung cấp thông tin tài khoản, đổi mật khẩu và đăng xuất. Đổi mật khẩu yêu cầu mật khẩu hiện tại, mật khẩu mới tối thiểu 8 ký tự và xác nhận khớp; DAO cập nhật hash và ghi nhật ký trong cùng transaction.
 - Đăng xuất cần xác nhận, ghi nhật ký, thu hồi session và xóa quyền đang giữ trước khi quay về LoginFrame. Các BUS nghiệp vụ cần gọi `AuthorizationBUS.requirePermission(...)` trước thao tác được bảo vệ.
-- Các màn hình nghiệp vụ ngoài đăng nhập hiện vẫn có thành phần dùng Mock Data/khung giao diện; xác thực và danh sách quyền lấy từ SQL Server, nhưng điều đó không đồng nghĩa mọi chức năng nghiệp vụ đã được tích hợp database.
+- Dashboard, quản lý bệnh nhân và quản lý lịch hẹn hiện truy vấn dữ liệu SQL Server. Các module nghiệp vụ còn lại vẫn có thể là khung giao diện; cần kiểm tra riêng trước khi sử dụng.
 
 ### 8.4. Phân tầng chức năng đăng nhập
 
@@ -608,6 +608,87 @@ SELECT
      WHERE h.TrangThai IN (N'ChuaThanhToan', N'ThanhToanMotPhan'))
         AS SoTienConPhaiThu;
 ```
+
+### 8.6. Quản lý lịch hẹn
+
+Màn hình lịch hẹn tuân theo luồng `view.AppointmentPanel/AppointmentDialog` →
+`bus.appointment.LichHenBUS` → `dao.appointment.LichHenDAO` → SQL Server.
+Quyền hiện có được dùng thống nhất là `LH_QUANLY`; BUS kiểm tra quyền cho cả
+đọc và thay đổi dữ liệu. Bác sĩ lấy từ `BacSi` nối `NhanVien`; chuyên khoa
+lấy theo `BacSi.MaChuyenKhoa`. Khung giờ chỉ được chọn khi đang mở, bác sĩ
+được phân công ca đã xác nhận trong ngày, giờ nằm trong ca làm việc, nhân viên
+đang làm việc và sức chứa còn chỗ. `SoLuongToiDa` trong schema có mặc định 1
+nhưng cho phép `NULL`; ứng dụng dùng giá trị mặc định đó nếu dữ liệu hiện có là
+`NULL`.
+
+Đặt lịch, chỉnh sửa, xác nhận và hủy được ghi cùng lịch sử vào
+`LichSuLichHen` trong transaction. Khi đặt/chỉnh sửa, DAO kiểm tra lại bệnh
+nhân, phân công, trạng thái khung giờ, sức chứa và lịch trùng trong transaction
+`SERIALIZABLE`; lịch đã phát sinh `LuotKham` không được chỉnh sửa hoặc hủy.
+Trạng thái lịch hẹn lấy từ dữ liệu thực tế; các trạng thái được định nghĩa trong
+schema gồm `ChoXacNhan`, `DaXacNhan`, `DaDen`, `DangKham`, `HoanTat`,
+`DaHuy` và `VangMat`.
+
+Có thể chạy các truy vấn chỉ đọc sau trong SSMS để đối chiếu danh sách và
+khung giờ theo ngày/bác sĩ:
+
+```sql
+USE QuanLyPhongKhamThuCuc;
+
+DECLARE @NgayKham DATE = CONVERT(DATE, SYSDATETIME());
+DECLARE @MaNhanVien VARCHAR(20) = 'NV003';
+
+SELECT lh.MaLichHen, lh.ThoiGianHen, lh.TrangThai,
+        bn.MaBenhNhan, bn.HoTen AS TenBenhNhan, bn.SoDienThoai,
+        nv.MaNhanVien, nv.HoTen AS TenBacSi,
+        ck.TenChuyenKhoa, lh.MaKhungGio, lh.LyDoKham
+FROM dbo.LichHen lh
+JOIN dbo.BenhNhan bn ON bn.MaBenhNhan = lh.MaBenhNhan
+LEFT JOIN dbo.NhanVien nv ON nv.MaNhanVien = lh.MaNhanVien
+LEFT JOIN dbo.BacSi bs ON bs.MaNhanVien = lh.MaNhanVien
+LEFT JOIN dbo.ChuyenKhoa ck
+     ON ck.MaChuyenKhoa = COALESCE(lh.MaChuyenKhoa, bs.MaChuyenKhoa)
+WHERE lh.ThoiGianHen >= @NgayKham
+  AND lh.ThoiGianHen < DATEADD(DAY, 1, @NgayKham)
+ORDER BY lh.ThoiGianHen, lh.MaLichHen;
+
+SELECT kg.MaKhungGio, kg.NgayKham, kg.MaNhanVien,
+        nv.HoTen AS TenBacSi, ck.TenChuyenKhoa,
+        kg.GioBatDau, kg.GioKetThuc,
+        COALESCE(kg.SoLuongToiDa, 1) AS SoLuongToiDa, kg.TrangThai,
+        COUNT(lh.MaLichHen) AS SoLichDangChiemCho
+FROM dbo.KhungGioKham kg
+JOIN dbo.BacSi bs ON bs.MaNhanVien = kg.MaNhanVien
+JOIN dbo.NhanVien nv ON nv.MaNhanVien = bs.MaNhanVien
+JOIN dbo.ChuyenKhoa ck ON ck.MaChuyenKhoa = bs.MaChuyenKhoa
+LEFT JOIN dbo.LichHen lh
+     ON lh.MaKhungGio = kg.MaKhungGio
+   AND lh.TrangThai IN (N'ChoXacNhan', N'DaXacNhan', N'DaDen', N'DangKham')
+WHERE kg.NgayKham = @NgayKham
+  AND kg.MaNhanVien = @MaNhanVien
+  AND kg.TrangThai = N'Mo'
+  AND nv.TrangThaiCongTac IN (N'ThuViec', N'DangLam')
+  AND ck.TrangThai = N'HoatDong'
+  AND EXISTS (
+      SELECT 1
+      FROM dbo.LichPhanCong lp
+      JOIN dbo.CaLamViec ca ON ca.MaCa = lp.MaCa
+      WHERE lp.MaNhanVien = kg.MaNhanVien
+        AND lp.NgayLam = kg.NgayKham
+        AND lp.TrangThai = N'DaXacNhan'
+        AND ca.TrangThai = N'HoatDong'
+        AND kg.GioBatDau >= ca.GioBatDau
+        AND kg.GioKetThuc <= ca.GioKetThuc)
+GROUP BY kg.MaKhungGio, kg.NgayKham, kg.MaNhanVien, nv.HoTen,
+          ck.TenChuyenKhoa, kg.GioBatDau, kg.GioKetThuc,
+          kg.SoLuongToiDa, kg.TrangThai
+HAVING COUNT(lh.MaLichHen) < COALESCE(kg.SoLuongToiDa, 1)
+ORDER BY kg.GioBatDau, kg.MaKhungGio;
+```
+
+`@MaNhanVien` trong ví dụ cần thay bằng mã bác sĩ thực tế. Danh sách khung giờ
+trên phản ánh lịch phân công và sức chứa; khi đặt lịch, ứng dụng còn kiểm tra
+xung đột thời gian của bệnh nhân và bác sĩ trong transaction.
 
 ---
 
