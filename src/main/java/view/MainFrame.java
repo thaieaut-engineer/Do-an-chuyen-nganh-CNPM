@@ -4,6 +4,7 @@ import com.formdev.flatlaf.FlatLightLaf;
 import bus.auth.AuthenticationBUS;
 import bus.auth.AuthenticationException;
 import bus.auth.AuthorizationBUS;
+import bus.dashboard.DashboardBUS;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -30,6 +31,7 @@ public class MainFrame extends JFrame {
     private final AuthenticatedSession session;
     private final AuthenticationBUS authenticationBUS = new AuthenticationBUS();
     private final AuthorizationBUS authorizationBUS = new AuthorizationBUS();
+    private final DashboardBUS dashboardBUS = new DashboardBUS();
     private final SidebarPanel sidebar;
     private final HeaderPanel header;
     private final JPanel pageHost = new JPanel(new BorderLayout());
@@ -104,7 +106,8 @@ public class MainFrame extends JFrame {
         sidebar.setActivePage(title);
         header.setPageTitle(title);
         JPanel page = title.equals("Tổng quan")
-                ? new DashboardPanel(this::showPage, availablePages::contains)
+                ? new DashboardPanel(session, dashboardBUS,
+                        this::showPage, availablePages::contains)
                 : new ModulePanel(title);
         JScrollPane scrollPane = new JScrollPane(page);
         scrollPane.setBorder(null);

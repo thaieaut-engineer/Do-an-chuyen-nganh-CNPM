@@ -30,7 +30,9 @@ final class SidebarPanel extends JPanel {
     private final JPanel brandText = new JPanel();
     private final JPanel footerText = new JPanel();
     private final Map<String, JButton> buttons = new LinkedHashMap<>();
-    private final List<JLabel> sectionLabels = new ArrayList<>();
+    private final Map<String, JPanel> sectionMenus = new LinkedHashMap<>();
+    private final Map<String, JButton> sectionToggles = new LinkedHashMap<>();
+    private final Map<String, String> pageSections = new LinkedHashMap<>();
     private final List<String> availablePages = new ArrayList<>();
     private final AuthorizationBUS authorizationBUS = new AuthorizationBUS();
     private boolean collapsed;
@@ -61,6 +63,10 @@ final class SidebarPanel extends JPanel {
     }
 
     void setActivePage(String selected) {
+        String section = pageSections.get(selected);
+        if (section != null) {
+            setSectionExpanded(section, true);
+        }
         buttons.forEach((name, button) -> {
             boolean active = name.equals(selected);
             button.setOpaque(active);
@@ -80,7 +86,12 @@ final class SidebarPanel extends JPanel {
             button.setHorizontalAlignment(collapsed ? SwingConstants.CENTER : SwingConstants.LEFT);
             button.setToolTipText(collapsed ? name : null);
         });
-        sectionLabels.forEach(label -> label.setVisible(!collapsed));
+        sectionToggles.forEach((section, button) -> {
+            button.setText(collapsed ? ">" : sectionToggleText(section));
+            button.setHorizontalAlignment(collapsed
+                    ? SwingConstants.CENTER : SwingConstants.LEFT);
+            button.setToolTipText(collapsed ? section : null);
+        });
         brandText.setVisible(!collapsed);
         footerText.setVisible(!collapsed);
         menu.revalidate();
@@ -173,60 +184,94 @@ final class SidebarPanel extends JPanel {
                 new MenuItem("Thông báo", "bell"),
                 new MenuItem("Báo cáo", "report")
         );
-        for (MenuItem item : items) {
-            if (item.icon == null) {
-                if (items.stream().anyMatch(candidate ->
-                        candidate.icon != null && authorizationBUS.canAccessPage(session, candidate.label)
-                                && belongsToSection(candidate, item.label, items))) {
-                    menu.add(sectionLabel(item.label));
+        int index = 0;
+        while (index < items.size()) {
+            MenuItem heading = items.get(index++);
+            if (heading.icon != null) {
+                continue;
+            }
+
+            List<MenuItem> permittedItems = new ArrayList<>();
+            while (index < items.size() && items.get(index).icon != null) {
+                MenuItem item = items.get(index++);
+                if (authorizationBUS.canAccessPage(session, item.label)) {
+                    permittedItems.add(item);
                 }
+            }
+            if (permittedItems.isEmpty()) {
                 continue;
             }
-            if (!authorizationBUS.canAccessPage(session, item.label)) {
-                continue;
+
+            JPanel sectionMenu = new JPanel();
+            sectionMenu.setOpaque(false);
+            sectionMenu.setLayout(new BoxLayout(sectionMenu, BoxLayout.Y_AXIS));
+            for (MenuItem item : permittedItems) {
+                JButton button = new JButton(
+                        item.label, new AppIcon(item.icon, MUTED_NAV, 17));
+                button.putClientProperty("navIconName", item.icon);
+                button.setHorizontalAlignment(SwingConstants.LEFT);
+                button.setIconTextGap(12);
+                button.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                button.setForeground(new Color(210, 221, 232));
+                button.setBackground(MainFrame.NAVY);
+                button.setOpaque(false);
+                button.setBorder(new EmptyBorder(9, 11, 9, 8));
+                button.setFocusPainted(false);
+                button.setAlignmentX(LEFT_ALIGNMENT);
+                button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+                button.addActionListener(event -> onNavigate.accept(item.label));
+                buttons.put(item.label, button);
+                pageSections.put(item.label, heading.label);
+                availablePages.add(item.label);
+                sectionMenu.add(button);
             }
-            JButton button = new JButton(item.label, new AppIcon(item.icon, MUTED_NAV, 17));
-            button.putClientProperty("navIconName", item.icon);
-            button.setHorizontalAlignment(SwingConstants.LEFT);
-            button.setIconTextGap(12);
-            button.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            button.setForeground(new Color(210, 221, 232));
-            button.setBackground(MainFrame.NAVY);
-            button.setOpaque(false);
-            button.setBorder(new EmptyBorder(10, 11, 10, 8));
-            button.setFocusPainted(false);
-            button.setAlignmentX(LEFT_ALIGNMENT);
-            button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-            button.addActionListener(event -> onNavigate.accept(item.label));
-            buttons.put(item.label, button);
-            availablePages.add(item.label);
-            button.setIcon(new AppIcon(item.icon, MUTED_NAV, 17));
-            menu.add(button);
+
+            JButton toggle = new JButton(sectionToggleText(heading.label));
+            toggle.setHorizontalAlignment(SwingConstants.LEFT);
+            toggle.setFont(new Font("Segoe UI", Font.BOLD, 10));
+            toggle.setForeground(MUTED_NAV);
+            toggle.setBackground(MainFrame.NAVY);
+            toggle.setOpaque(false);
+            toggle.setBorder(new EmptyBorder(12, 11, 7, 8));
+            toggle.setFocusPainted(false);
+            toggle.setAlignmentX(LEFT_ALIGNMENT);
+            toggle.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+            toggle.addActionListener(event -> {
+                JPanel itemsPanel = sectionMenus.get(heading.label);
+                setSectionExpanded(
+                        heading.label, !itemsPanel.isVisible());
+            });
+            sectionToggles.put(heading.label, toggle);
+            sectionMenus.put(heading.label, sectionMenu);
+            menu.add(toggle);
+            menu.add(sectionMenu);
+            setSectionExpanded(heading.label, false);
         }
     }
 
-    private boolean belongsToSection(MenuItem item, String section, List<MenuItem> items) {
-        int sectionIndex = items.indexOf(items.stream()
-                .filter(candidate -> candidate.label.equals(section)).findFirst().orElse(null));
-        int itemIndex = items.indexOf(item);
-        int nextSection = items.size();
-        for (int i = sectionIndex + 1; i < items.size(); i++) {
-            if (items.get(i).icon == null) {
-                nextSection = i;
-                break;
-            }
-        }
-        return itemIndex > sectionIndex && itemIndex < nextSection;
+    private String sectionToggleText(String section) {
+        JPanel sectionMenu = sectionMenus.get(section);
+        return (sectionMenu != null && sectionMenu.isVisible() ? "-  " : "+  ") + section;
     }
 
-    private JLabel sectionLabel(String text) {
-        JLabel label = new JLabel(text);
-        label.setForeground(MUTED_NAV);
-        label.setFont(new Font("Segoe UI", Font.BOLD, 9));
-        label.setBorder(new EmptyBorder(13, 11, 6, 0));
-        label.setAlignmentX(LEFT_ALIGNMENT);
-        sectionLabels.add(label);
-        return label;
+    private void setSectionExpanded(String section, boolean expanded) {
+        JPanel sectionMenu = sectionMenus.get(section);
+        JButton toggle = sectionToggles.get(section);
+        if (sectionMenu == null || toggle == null) {
+            return;
+        }
+        if (expanded) {
+            sectionMenus.forEach((name, itemsPanel) -> {
+                if (!name.equals(section)) {
+                    itemsPanel.setVisible(false);
+                }
+            });
+        }
+        sectionMenu.setVisible(expanded);
+        sectionToggles.forEach((name, sectionToggle) ->
+                sectionToggle.setText(collapsed ? ">" : sectionToggleText(name)));
+        menu.revalidate();
+        menu.repaint();
     }
 
     private static final class MenuItem {

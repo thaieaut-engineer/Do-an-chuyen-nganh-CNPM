@@ -549,6 +549,66 @@ view.auth.LoginFrame
 
 `AuthenticationDAO` tự quản lý JDBC resource và transaction cho đăng nhập, đổi mật khẩu cùng nhật ký. `AuthenticationBUS` kiểm tra trạng thái/mật khẩu, đổi mật khẩu và đăng xuất; session không chứa mật khẩu hay hash, đồng thời bị thu hồi khi đăng xuất. `PasswordHasher` và `AuthenticationException` được đặt cùng tầng BUS để không còn package `auth` tách rời.
 
+### 8.5. Dashboard dữ liệu thực
+
+Dashboard tải dữ liệu bất đồng bộ theo luồng `view.DashboardPanel` → `bus.dashboard.DashboardBUS` → `dao.dashboard.DashboardDAO` → SQL Server. Các KPI và biểu đồ lấy từ `LichHen`, `LuotKham`, `BenhNhan`, `HoaDon` và `GiaoDichThanhToan`; lịch hẹn sắp tới nối `BenhNhan`, `NhanVien`, `BacSi` và `ChuyenKhoa`. Doanh thu chỉ cộng giao dịch `ThanhCong`, không cộng lại tổng hóa đơn. Số cần thu là số dư trên hóa đơn `ChuaThanhToan` hoặc `ThanhToanMotPhan`, trừ giao dịch thành công.
+
+Dashboard không có mã quyền riêng trong schema hiện tại; quyền `BAOCAO_XEM` chỉ mô tả xem báo cáo. Vì vậy, Dashboard dùng quy tắc hiện có: yêu cầu phiên đăng nhập còn hiệu lực và không tự gán thêm quyền hoặc thay đổi database.
+
+Có thể chạy các truy vấn chỉ đọc sau trong SSMS để đối chiếu tổng quan:
+
+```sql
+USE QuanLyPhongKhamThuCuc;
+
+DECLARE @Today DATE = CONVERT(DATE, SYSDATETIME());
+DECLARE @Tomorrow DATE = DATEADD(DAY, 1, @Today);
+DECLARE @MonthStart DATE = DATEFROMPARTS(YEAR(@Today), MONTH(@Today), 1);
+DECLARE @NextMonth DATE = DATEADD(MONTH, 1, @MonthStart);
+
+SELECT
+    (SELECT COUNT_BIG(*) FROM dbo.LichHen
+     WHERE ThoiGianHen >= @Today AND ThoiGianHen < @Tomorrow) AS LichHenHomNay,
+    (SELECT COUNT_BIG(*) FROM dbo.LichHen
+     WHERE ThoiGianHen >= @Today AND ThoiGianHen < @Tomorrow
+       AND TrangThai = N'DaXacNhan') AS LichHenDaXacNhan,
+    (SELECT COUNT_BIG(*) FROM dbo.LichHen
+     WHERE ThoiGianHen >= @Today AND ThoiGianHen < @Tomorrow
+       AND TrangThai = N'DaHuy') AS LichHenDaHuy,
+    (SELECT COUNT_BIG(*) FROM dbo.LuotKham
+     WHERE ThoiGianTiepNhan >= @Today AND ThoiGianTiepNhan < @Tomorrow)
+        AS LuotKhamHomNay,
+    (SELECT COUNT_BIG(*) FROM dbo.LuotKham
+     WHERE ThoiGianTiepNhan >= @Today AND ThoiGianTiepNhan < @Tomorrow
+       AND TrangThai = N'HoanTat') AS LuotKhamHoanTat,
+    (SELECT COUNT_BIG(*) FROM dbo.LuotKham
+     WHERE ThoiGianTiepNhan >= @Today AND ThoiGianTiepNhan < @Tomorrow
+       AND TrangThai IN (N'ChoKham', N'DangKham', N'ChoKetQua'))
+        AS LuotKhamDangXuLy,
+    (SELECT COUNT_BIG(*) FROM dbo.BenhNhan) AS TongBenhNhan,
+    (SELECT COUNT_BIG(*) FROM dbo.BenhNhan
+     WHERE NgayTaoHoSo >= @MonthStart AND NgayTaoHoSo < @NextMonth)
+        AS BenhNhanMoiTrongThang,
+    (SELECT COALESCE(SUM(g.SoTien), 0)
+     FROM dbo.GiaoDichThanhToan g
+     JOIN dbo.HoaDon h ON h.MaHoaDon = g.MaHoaDon
+     WHERE g.ThoiGianGiaoDich >= @Today AND g.ThoiGianGiaoDich < @Tomorrow
+       AND g.TrangThai = N'ThanhCong'
+       AND h.TrangThai NOT IN (N'DaHuy', N'DaHoanTien'))
+        AS DoanhThuThucThuHomNay,
+    (SELECT COALESCE(SUM(
+         CASE WHEN h.SoTienPhaiTra > COALESCE(p.PaidAmount, 0)
+              THEN h.SoTienPhaiTra - COALESCE(p.PaidAmount, 0)
+              ELSE 0 END), 0)
+     FROM dbo.HoaDon h
+     OUTER APPLY (
+         SELECT SUM(g.SoTien) AS PaidAmount
+         FROM dbo.GiaoDichThanhToan g
+         WHERE g.MaHoaDon = h.MaHoaDon AND g.TrangThai = N'ThanhCong'
+     ) p
+     WHERE h.TrangThai IN (N'ChuaThanhToan', N'ThanhToanMotPhan'))
+        AS SoTienConPhaiThu;
+```
+
 ---
 
 ## 📌 Ghi chú
