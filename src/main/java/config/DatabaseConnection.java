@@ -11,6 +11,8 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 public class DatabaseConnection {
@@ -59,15 +61,57 @@ public class DatabaseConnection {
             if (cachedProperties != null) {
                 return cachedProperties;
             }
+
             Properties loaded = new Properties();
-            Path configPath = Path.of("db.properties");
-            try (InputStream input = Files.newInputStream(configPath)) {
-                loaded.load(input);
-            } catch (IOException e) {
-                throw new SQLException("Không thể đọc db.properties. Hãy tạo file từ db.properties.example.", e);
+            List<Path> candidates = new ArrayList<>();
+            Path userDir = Path.of(System.getProperty("user.dir", ""));
+            if (!userDir.toString().isBlank()) {
+                candidates.add(userDir.resolve("db.properties"));
+                candidates.add(userDir.resolve("src").resolve("main").resolve("resources").resolve("db.properties"));
             }
-            cachedProperties = loaded;
-            return loaded;
+            Path workingDir = Path.of("").toAbsolutePath().normalize();
+            candidates.add(workingDir.resolve("db.properties"));
+            candidates.add(Path.of("db.properties"));
+
+            SQLException lastError = null;
+            for (Path configPath : candidates) {
+                if (configPath == null) {
+                    continue;
+                }
+                if (!Files.exists(configPath)) {
+                    continue;
+                }
+                try (InputStream input = Files.newInputStream(configPath)) {
+                    loaded.load(input);
+                    cachedProperties = loaded;
+                    return loaded;
+                } catch (IOException e) {
+                    lastError = new SQLException("Không thể đọc db.properties tại " + configPath, e);
+                }
+            }
+
+            String classpathPath = "db.properties";
+            try (InputStream input = DatabaseConnection.class.getClassLoader().getResourceAsStream(classpathPath)) {
+                if (input != null) {
+                    loaded.load(input);
+                    cachedProperties = loaded;
+                    return loaded;
+                }
+            } catch (IOException e) {
+                lastError = new SQLException("Không thể đọc db.properties từ classpath.", e);
+            }
+
+            StringBuilder searched = new StringBuilder();
+            for (Path configPath : candidates) {
+                if (searched.length() > 0) {
+                    searched.append(", ");
+                }
+                searched.append(configPath.toAbsolutePath().normalize());
+            }
+            throw new SQLException(
+                    "Không tìm thấy db.properties. Hãy tạo file từ db.properties.example và đặt trong thư mục dự án. Các vị trí đã kiểm tra: "
+                            + searched + ".",
+                    lastError);
         }
     }
 }

@@ -77,6 +77,16 @@ public final class LichHenBUS {
         }
     }
 
+    public LocalDate getNearestScheduleDate(AuthenticatedSession session)
+            throws AppointmentException {
+        requireAccess(session);
+        try {
+            return appointmentDAO.getNearestScheduledDate();
+        } catch (AppointmentDAOException exception) {
+            throw toAppointmentException(exception);
+        }
+    }
+
     public List<String> getStatuses(AuthenticatedSession session)
             throws AppointmentException {
         requireAccess(session);

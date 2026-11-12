@@ -69,6 +69,7 @@ final class AppointmentDialog extends JDialog {
     private boolean busy;
     private long slotRequestVersion;
     private long doctorRequestVersion;
+    private List<AppointmentDoctor> knownDoctors = List.of();
 
     AppointmentDialog(
             Frame owner, AuthenticatedSession session, LichHenBUS appointmentBUS,
@@ -83,8 +84,8 @@ final class AppointmentDialog extends JDialog {
         this.onSaved = onSaved;
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setContentPane(createContent());
-        setMinimumSize(new Dimension(620, 670));
-        setSize(680, 760);
+        setMinimumSize(new Dimension(560, 560));
+        setSize(620, 620);
         setLocationRelativeTo(owner);
         appointmentDate.setEditor(new JSpinner.DateEditor(appointmentDate, "dd/MM/yyyy"));
         Date today = Date.from(LocalDate.now()
@@ -297,17 +298,21 @@ final class AppointmentDialog extends JDialog {
         new SwingWorker<InitialData, Void>() {
             @Override
             protected InitialData doInBackground() throws AppointmentException {
-                LocalDate databaseDate = appointmentBUS.getDatabaseDate(session);
+                LocalDate defaultDate = appointmentBUS.getNearestScheduleDate(session);
                 List<AppointmentSpecialty> specialties =
                         appointmentBUS.getSpecialties(session);
+                List<AppointmentPatient> allPatients = appointmentBUS.searchPatients(session, "");
+                List<AppointmentDoctor> allDoctors = appointmentBUS.getDoctors(session);
+                knownDoctors = List.copyOf(allDoctors);
                 LichHen appointment = appointmentId == null
                         ? null : appointmentBUS.getById(session, appointmentId);
                 List<AppointmentPatient> patients = appointment == null
-                        ? List.of() : List.of(new AppointmentPatient(
+                        ? allPatients
+                        : List.of(new AppointmentPatient(
                                 appointment.maBenhNhan(),
                                 appointment.tenBenhNhan(),
                                 appointment.soDienThoaiBenhNhan()));
-                return new InitialData(databaseDate, specialties, appointment, patients);
+                return new InitialData(defaultDate, specialties, appointment, patients, allPatients, allDoctors);
             }
 
             @Override
@@ -322,10 +327,19 @@ final class AppointmentDialog extends JDialog {
                     for (AppointmentSpecialty specialty : data.specialties()) {
                         specialtySelector.addItem(specialty);
                     }
+                    for (AppointmentPatient patient : data.allPatients()) {
+                        patientSelector.addItem(patient);
+                    }
+                    for (AppointmentDoctor doctor : data.allDoctors()) {
+                        doctorSelector.addItem(doctor);
+                    }
                     if (data.appointment() != null) {
                         LichHen appointment = data.appointment();
                         for (AppointmentPatient patient : data.patients()) {
-                            patientSelector.addItem(patient);
+                            if (data.allPatients().stream()
+                                    .noneMatch(existing -> existing.maBenhNhan().equals(patient.maBenhNhan()))) {
+                                patientSelector.addItem(patient);
+                            }
                         }
                         selectPatient(appointment.maBenhNhan());
                         selectSpecialty(appointment.maChuyenKhoa());
@@ -432,6 +446,12 @@ final class AppointmentDialog extends JDialog {
                 }
                 try {
                     List<AppointmentDoctor> availableDoctors = get();
+                    if (availableDoctors.isEmpty() && specialty != null) {
+                        availableDoctors = knownDoctors.stream()
+                                .filter(doctor -> doctor.maChuyenKhoa() != null
+                                        && doctor.maChuyenKhoa().equals(specialty.maChuyenKhoa()))
+                                .toList();
+                    }
                     updatingSelectors = true;
                     for (AppointmentDoctor doctor : availableDoctors) {
                         doctorSelector.addItem(doctor);
@@ -441,7 +461,7 @@ final class AppointmentDialog extends JDialog {
                     }
                     updatingSelectors = false;
                     setOptionsLoading(false, availableDoctors.isEmpty()
-                            ? "Ngày này chưa có bác sĩ được phân công đã xác nhận."
+                            ? "Ngày này chưa có bác sĩ được phân công đã xác nhận; đang hiển thị bác sĩ chuyên khoa có sẵn."
                             : " ");
                     if (doctorSelector.getSelectedItem() != null) {
                         reloadSlots(selectedSlotId);
@@ -655,6 +675,8 @@ final class AppointmentDialog extends JDialog {
             LocalDate databaseDate,
             List<AppointmentSpecialty> specialties,
             LichHen appointment,
-            List<AppointmentPatient> patients) {
+            List<AppointmentPatient> patients,
+            List<AppointmentPatient> allPatients,
+            List<AppointmentDoctor> allDoctors) {
     }
 }

@@ -41,6 +41,25 @@ public final class LichHenDAO {
         }
     }
 
+    public LocalDate getNearestScheduledDate() {
+        String sql = """
+                SELECT MIN(lp.NgayLam) AS NgayLam
+                FROM dbo.LichPhanCong lp
+                WHERE lp.TrangThai = N'DaXacNhan'
+                  AND lp.NgayLam >= CAST(SYSDATETIME() AS date)
+                """;
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet result = statement.executeQuery()) {
+            if (!result.next() || result.getDate("NgayLam") == null) {
+                return getDatabaseDate();
+            }
+            return result.getDate("NgayLam").toLocalDate();
+        } catch (SQLException exception) {
+            throw databaseError("Không thể xác định ngày khám gần nhất theo lịch phân công.", exception);
+        }
+    }
+
     public AppointmentPage search(AppointmentFilter filter) {
         QueryConditions conditions = conditions(filter);
         String from = """
