@@ -510,6 +510,12 @@ ChoKham → DangKham → ChoKetQua → HoanTat
 
 Chỉ tài khoản có quyền `KHAM_HOSO` mới được cập nhật. Bác sĩ chỉ cập nhật lượt khám của mình; tài khoản có quyền quản lý nhân sự hiện có (`NHANSU_SUA`) có thể điều phối lượt khám. Hoàn tất yêu cầu phiếu khám thuộc đúng bác sĩ phụ trách ở trạng thái `HoanTat`, `DaKy` hoặc `DaKhoa`, đồng thời không còn chỉ định dịch vụ ở trạng thái `ChoThucHien` hoặc `DangThucHien`. Khi hoàn tất, ứng dụng ghi `ThoiGianKetThuc`; schema hiện không có cột thời gian bắt đầu khám nên ứng dụng không tự tạo hoặc ghi trường đó. Mỗi lần chuyển trạng thái và ghi nhật ký `NhatKyHeThong` được thực hiện trong cùng transaction. Trạng thái `DaHuy` chỉ được hiển thị, không có thao tác hủy vì schema chưa xác định lý do hay quy trình hủy lượt khám.
 
+### 7.7. Kê đơn thuốc
+
+Màn hình **Kê đơn thuốc** đọc `DonThuoc`, `ChiTietDonThuoc` và danh mục `Thuoc`; người dùng có quyền `DONTHUOC_KE` mới truy cập được. Bác sĩ chỉ kê hoặc thay đổi đơn trên lượt khám do mình phụ trách; quyền quản lý hiện có `NHANSU_SUA` cho phép quản lý đơn của bác sĩ khác. Đơn mới chỉ được lập cho lượt khám `DangKham` hoặc `ChoKetQua`, với thuốc `DangSuDung`.
+
+Chỉ đơn ở trạng thái `Nhap`, chưa liên kết phiếu xuất và còn trong lượt khám hợp lệ mới được sửa hoặc hủy. Thao tác hủy chuyển trạng thái sang `Huy`, không xóa đơn hay chi tiết. Các chi tiết đã lưu không bị xóa khi sửa. Kê đơn chỉ tạo/cập nhật dữ liệu đơn thuốc và nhật ký; không tạo `PhieuXuat`, không chọn lô và không thay đổi tồn kho. Việc xuất/cấp phát tiếp tục thuộc quy trình quản lý kho hiện có.
+
 ---
 
 ## 8. Đăng nhập, phân quyền và giao diện

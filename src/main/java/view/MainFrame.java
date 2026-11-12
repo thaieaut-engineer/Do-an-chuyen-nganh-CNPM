@@ -8,6 +8,7 @@ import bus.appointment.LichHenBUS;
 import bus.dashboard.DashboardBUS;
 import bus.medicalrecord.PhieuKhamBUS;
 import bus.patient.BenhNhanBUS;
+import bus.prescription.DonThuocBUS;
 import bus.reception.TiepNhanBUS;
 import bus.serviceorder.ServiceOrderBUS;
 import bus.visit.LuotKhamBUS;
@@ -44,6 +45,7 @@ public class MainFrame extends JFrame {
     private final PhieuKhamBUS medicalRecordBUS = new PhieuKhamBUS();
     private final ServiceOrderBUS serviceOrderBUS = new ServiceOrderBUS();
     private final BenhNhanBUS patientBUS = new BenhNhanBUS();
+    private final DonThuocBUS prescriptionBUS = new DonThuocBUS();
     private final SidebarPanel sidebar;
     private final HeaderPanel header;
     private final JPanel pageHost = new JPanel(new BorderLayout());
@@ -54,6 +56,7 @@ public class MainFrame extends JFrame {
     private VisitPanel visitPanel;
     private MedicalRecordPanel medicalRecordPanel;
     private ServiceOrderPanel serviceOrderPanel;
+    private PrescriptionPanel prescriptionPanel;
     private boolean logoutStarted;
 
     public MainFrame(AuthenticatedSession session) {
@@ -168,6 +171,13 @@ public class MainFrame extends JFrame {
                 serviceOrderPanel.refreshData();
             }
             page = serviceOrderPanel;
+        } else if (title.equals("Kê đơn thuốc")) {
+            if (prescriptionPanel == null) {
+                prescriptionPanel = new PrescriptionPanel(session, prescriptionBUS);
+            } else {
+                prescriptionPanel.refreshData();
+            }
+            page = prescriptionPanel;
         } else {
             page = new ModulePanel(title);
         }
