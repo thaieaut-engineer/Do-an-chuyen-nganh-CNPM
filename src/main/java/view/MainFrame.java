@@ -6,6 +6,7 @@ import bus.auth.AuthenticationException;
 import bus.auth.AuthorizationBUS;
 import bus.appointment.LichHenBUS;
 import bus.dashboard.DashboardBUS;
+import bus.medicalrecord.PhieuKhamBUS;
 import bus.patient.BenhNhanBUS;
 import bus.reception.TiepNhanBUS;
 import bus.visit.LuotKhamBUS;
@@ -39,6 +40,7 @@ public class MainFrame extends JFrame {
     private final TiepNhanBUS receptionBUS = new TiepNhanBUS();
     private final LuotKhamBUS visitBUS = new LuotKhamBUS();
     private final DashboardBUS dashboardBUS = new DashboardBUS();
+    private final PhieuKhamBUS medicalRecordBUS = new PhieuKhamBUS();
     private final BenhNhanBUS patientBUS = new BenhNhanBUS();
     private final SidebarPanel sidebar;
     private final HeaderPanel header;
@@ -48,6 +50,7 @@ public class MainFrame extends JFrame {
     private AppointmentPanel appointmentPanel;
     private ReceptionPanel receptionPanel;
     private VisitPanel visitPanel;
+    private MedicalRecordPanel medicalRecordPanel;
     private boolean logoutStarted;
 
     public MainFrame(AuthenticatedSession session) {
@@ -148,6 +151,13 @@ public class MainFrame extends JFrame {
                 visitPanel.refreshData();
             }
             page = visitPanel;
+        } else if (title.equals("Phiếu khám")) {
+            if (medicalRecordPanel == null) {
+                medicalRecordPanel = new MedicalRecordPanel(session, medicalRecordBUS);
+            } else {
+                medicalRecordPanel.refreshData();
+            }
+            page = medicalRecordPanel;
         } else {
             page = new ModulePanel(title);
         }

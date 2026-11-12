@@ -718,3 +718,17 @@ xung đột thời gian của bệnh nhân và bác sĩ trong transaction.
 **Database:** `QuanLyPhongKhamThuCuc`  
 **Database Management System:** Microsoft SQL Server
 **Backend Connectivity:** Java JDBC
+
+### 8.7. Quản lý phiếu khám
+
+Màn hình **Phiếu khám** đọc danh sách, thống kê, bộ lọc và nội dung chi tiết từ SQL
+Server; người dùng có thể tìm kiếm, lọc theo ngày lập/trạng thái/bác sĩ/chuyên khoa
+và phân trang. Tài khoản cần quyền hiện có `KHAM_HOSO`. Bác sĩ chỉ xem và thao tác
+với phiếu thuộc lượt khám mình phụ trách; tài khoản có quyền hiện có `NHANSU_SUA`
+có thể quản lý phiếu của các bác sĩ.
+
+Chỉ tạo phiếu nháp cho lượt khám đang `DangKham` hoặc `ChoKetQua` và chưa có phiếu
+liên kết. Chỉ cập nhật phiếu `Nhap` khi lượt khám còn ở một trong hai trạng thái
+trên; nội dung bắt buộc gồm triệu chứng, kết quả lâm sàng và chẩn đoán. Phiếu đã ký,
+hoàn tất hoặc khóa chỉ được xem. Màn hình không ký phiếu, tạo y lệnh, chỉ định dịch
+vụ hay tính viện phí; không thay đổi schema.
