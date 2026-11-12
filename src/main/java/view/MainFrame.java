@@ -8,6 +8,7 @@ import bus.appointment.LichHenBUS;
 import bus.dashboard.DashboardBUS;
 import bus.patient.BenhNhanBUS;
 import bus.reception.TiepNhanBUS;
+import bus.visit.LuotKhamBUS;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -36,6 +37,7 @@ public class MainFrame extends JFrame {
     private final AuthorizationBUS authorizationBUS = new AuthorizationBUS();
     private final LichHenBUS appointmentBUS = new LichHenBUS();
     private final TiepNhanBUS receptionBUS = new TiepNhanBUS();
+    private final LuotKhamBUS visitBUS = new LuotKhamBUS();
     private final DashboardBUS dashboardBUS = new DashboardBUS();
     private final BenhNhanBUS patientBUS = new BenhNhanBUS();
     private final SidebarPanel sidebar;
@@ -45,6 +47,7 @@ public class MainFrame extends JFrame {
     private PatientPanel patientPanel;
     private AppointmentPanel appointmentPanel;
     private ReceptionPanel receptionPanel;
+    private VisitPanel visitPanel;
     private boolean logoutStarted;
 
     public MainFrame(AuthenticatedSession session) {
@@ -138,6 +141,13 @@ public class MainFrame extends JFrame {
                 receptionPanel = new ReceptionPanel(session, receptionBUS);
             }
             page = receptionPanel;
+        } else if (title.equals("Lượt khám")) {
+            if (visitPanel == null) {
+                visitPanel = new VisitPanel(session, visitBUS);
+            } else {
+                visitPanel.refreshData();
+            }
+            page = visitPanel;
         } else {
             page = new ModulePanel(title);
         }

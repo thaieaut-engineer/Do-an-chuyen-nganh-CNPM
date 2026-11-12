@@ -498,6 +498,18 @@ Trước khi cho phép người dùng truy cập chức năng, ứng dụng cầ
 
 Việc phân quyền được xử lý tại tầng ứng dụng Java, kết hợp với dữ liệu được lưu trữ trong các bảng quản trị hệ thống.
 
+### 7.6. Theo dõi và chuyển trạng thái lượt khám
+
+Màn hình **Lượt khám** đọc dữ liệu từ `LuotKham` và các quan hệ bệnh nhân, bác sĩ, lịch hẹn, phiếu khám. Danh sách được tìm kiếm, lọc và phân trang; màn hình không tạo hoặc xóa lượt khám.
+
+Các trạng thái được khai báo bởi ràng buộc của `LuotKham` là `ChoKham`, `DangKham`, `ChoKetQua`, `HoanTat` và `DaHuy`. Ứng dụng chỉ cho phép tiến trạng thái theo luồng:
+
+```text
+ChoKham → DangKham → ChoKetQua → HoanTat
+```
+
+Chỉ tài khoản có quyền `KHAM_HOSO` mới được cập nhật. Bác sĩ chỉ cập nhật lượt khám của mình; tài khoản có quyền quản lý nhân sự hiện có (`NHANSU_SUA`) có thể điều phối lượt khám. Hoàn tất yêu cầu phiếu khám thuộc đúng bác sĩ phụ trách ở trạng thái `HoanTat`, `DaKy` hoặc `DaKhoa`, đồng thời không còn chỉ định dịch vụ ở trạng thái `ChoThucHien` hoặc `DangThucHien`. Khi hoàn tất, ứng dụng ghi `ThoiGianKetThuc`; schema hiện không có cột thời gian bắt đầu khám nên ứng dụng không tự tạo hoặc ghi trường đó. Mỗi lần chuyển trạng thái và ghi nhật ký `NhatKyHeThong` được thực hiện trong cùng transaction. Trạng thái `DaHuy` chỉ được hiển thị, không có thao tác hủy vì schema chưa xác định lý do hay quy trình hủy lượt khám.
+
 ---
 
 ## 8. Đăng nhập, phân quyền và giao diện
