@@ -9,6 +9,7 @@ import bus.dashboard.DashboardBUS;
 import bus.medicalrecord.PhieuKhamBUS;
 import bus.patient.BenhNhanBUS;
 import bus.reception.TiepNhanBUS;
+import bus.serviceorder.ServiceOrderBUS;
 import bus.visit.LuotKhamBUS;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -41,6 +42,7 @@ public class MainFrame extends JFrame {
     private final LuotKhamBUS visitBUS = new LuotKhamBUS();
     private final DashboardBUS dashboardBUS = new DashboardBUS();
     private final PhieuKhamBUS medicalRecordBUS = new PhieuKhamBUS();
+    private final ServiceOrderBUS serviceOrderBUS = new ServiceOrderBUS();
     private final BenhNhanBUS patientBUS = new BenhNhanBUS();
     private final SidebarPanel sidebar;
     private final HeaderPanel header;
@@ -51,6 +53,7 @@ public class MainFrame extends JFrame {
     private ReceptionPanel receptionPanel;
     private VisitPanel visitPanel;
     private MedicalRecordPanel medicalRecordPanel;
+    private ServiceOrderPanel serviceOrderPanel;
     private boolean logoutStarted;
 
     public MainFrame(AuthenticatedSession session) {
@@ -146,7 +149,7 @@ public class MainFrame extends JFrame {
             page = receptionPanel;
         } else if (title.equals("Lượt khám")) {
             if (visitPanel == null) {
-                visitPanel = new VisitPanel(session, visitBUS);
+                visitPanel = new VisitPanel(session, visitBUS, serviceOrderBUS);
             } else {
                 visitPanel.refreshData();
             }
@@ -158,6 +161,13 @@ public class MainFrame extends JFrame {
                 medicalRecordPanel.refreshData();
             }
             page = medicalRecordPanel;
+        } else if (title.equals("Chỉ định dịch vụ")) {
+            if (serviceOrderPanel == null) {
+                serviceOrderPanel = new ServiceOrderPanel(session, serviceOrderBUS);
+            } else {
+                serviceOrderPanel.refreshData();
+            }
+            page = serviceOrderPanel;
         } else {
             page = new ModulePanel(title);
         }

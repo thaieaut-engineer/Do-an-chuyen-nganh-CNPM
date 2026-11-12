@@ -719,6 +719,86 @@ xung đột thời gian của bệnh nhân và bác sĩ trong transaction.
 **Database Management System:** Microsoft SQL Server
 **Backend Connectivity:** Java JDBC
 
+### 8.8. Quản lý chỉ định dịch vụ
+
+Màn hình **Chỉ định dịch vụ** dùng quyền sẵn có `KHAM_CHIDINH`. Bác sĩ chỉ xem và
+thao tác trên lượt khám do mình phụ trách; tài khoản có quyền hiện có `NHANSU_SUA`
+có thể xem/điều phối trên phạm vi các bác sĩ. Mục **Lượt khám** có nút xem toàn bộ
+chỉ định của lượt đang chọn.
+
+Theo schema, `ChiDinhDichVu.MaPhieuKham` tham chiếu `PhieuKham`; phiếu khám lại tham
+chiếu duy nhất một lượt khám. Chỉ định mới chỉ được lập cho lượt `DangKham` hoặc
+`ChoKetQua`, đã có phiếu khám khớp bác sĩ phụ trách, và chỉ chọn dịch vụ
+`DangApDung`. Ghi chú giới hạn 255 ký tự. Chỉ định được lưu ở trạng thái
+`ChoThucHien`; chỉ được sửa hoặc hủy mềm (`DaHuy`) khi còn `ChoThucHien`, lượt khám
+còn hoạt động và chưa được đưa vào `ChiTietPhieuTinhPhi`. Chỉ định `DangThucHien`,
+`HoanTat`, `DaHuy` hoặc đã tính phí không thể sửa/hủy từ màn hình này. Các thao tác
+ghi và nhật ký hệ thống cùng nằm trong transaction.
+
+`ChiDinhDichVu` không có cột số lượng, giá tại thời điểm chỉ định, người chỉ định
+hay lý do hủy riêng. `MaNhanVienThucHien` là nhân viên thực hiện dịch vụ nên ứng dụng
+không dùng trường này để giả danh bác sĩ chỉ định. Danh mục hiển thị giá tham khảo
+từ `ChiTietBangGia` thuộc bảng giá `DangApDung` có hiệu lực theo ngày hiện tại; giá
+không được lưu vào chỉ định và có thể thay đổi trước khi tính phí. Trường hợp có
+nhiều giá đang hiệu lực cho cùng một dịch vụ, truy vấn dừng và báo lỗi dữ liệu thay
+vì tự chọn một giá.
+
+Truy vấn chỉ đọc để đối chiếu trong SSMS:
+
+```sql
+USE QuanLyPhongKhamThuCuc;
+
+SELECT MaDichVu, TenDichVu, LoaiDichVu, DonViTinh, TrangThai
+FROM dbo.DichVu
+ORDER BY LoaiDichVu, TenDichVu;
+
+SELECT cd.MaChiDinh, lv.MaLuotKham, pk.MaPhieuKham,
+       bn.MaBenhNhan, bn.HoTen AS TenBenhNhan,
+       dv.MaDichVu, dv.TenDichVu, pk.MaNhanVien AS MaBacSiPhuTrach,
+       nv.HoTen AS TenBacSi, cd.ThoiGianChiDinh, cd.TrangThai, cd.GhiChu,
+       CASE WHEN EXISTS (
+           SELECT 1 FROM dbo.ChiTietPhieuTinhPhi ctp
+           WHERE ctp.MaChiDinh = cd.MaChiDinh
+       ) THEN 1 ELSE 0 END AS DaTinhPhi
+FROM dbo.ChiDinhDichVu cd
+JOIN dbo.PhieuKham pk ON pk.MaPhieuKham = cd.MaPhieuKham
+JOIN dbo.LuotKham lv ON lv.MaLuotKham = pk.MaLuotKham
+JOIN dbo.BenhNhan bn ON bn.MaBenhNhan = lv.MaBenhNhan
+JOIN dbo.BacSi bs ON bs.MaNhanVien = pk.MaNhanVien
+JOIN dbo.NhanVien nv ON nv.MaNhanVien = bs.MaNhanVien
+JOIN dbo.DichVu dv ON dv.MaDichVu = cd.MaDichVu
+ORDER BY cd.ThoiGianChiDinh DESC, cd.MaChiDinh DESC;
+
+DECLARE @MaLuotKham BIGINT = 1; -- Thay bằng mã lượt khám cần kiểm tra.
+SELECT cd.MaChiDinh, cd.MaPhieuKham, cd.MaDichVu, dv.TenDichVu,
+       cd.ThoiGianChiDinh, cd.TrangThai, cd.MaNhanVienThucHien, cd.GhiChu
+FROM dbo.ChiDinhDichVu cd
+JOIN dbo.PhieuKham pk ON pk.MaPhieuKham = cd.MaPhieuKham
+JOIN dbo.DichVu dv ON dv.MaDichVu = cd.MaDichVu
+WHERE pk.MaLuotKham = @MaLuotKham
+ORDER BY cd.ThoiGianChiDinh, cd.MaChiDinh;
+
+SELECT dv.MaDichVu, dv.TenDichVu
+FROM dbo.DichVu dv
+WHERE dv.TrangThai <> N'DangApDung';
+
+SELECT bg.MaBangGia, bg.TenBangGia, bg.TuNgay, bg.DenNgay,
+       ct.MaDichVu, dv.TenDichVu, ct.DonGia
+FROM dbo.BangGiaDichVu bg
+JOIN dbo.ChiTietBangGia ct ON ct.MaBangGia = bg.MaBangGia
+JOIN dbo.DichVu dv ON dv.MaDichVu = ct.MaDichVu
+WHERE bg.TrangThai = N'DangApDung'
+  AND bg.TuNgay <= CONVERT(date, SYSDATETIME())
+  AND (bg.DenNgay IS NULL OR bg.DenNgay >= CONVERT(date, SYSDATETIME()))
+ORDER BY ct.MaDichVu, bg.TuNgay DESC;
+
+SELECT ctp.MaPhieuTinhPhi, ctp.MaChiDinh, ctp.MoTa, ctp.SoLuong,
+       ctp.DonGia, ctp.ThanhTien
+FROM dbo.ChiTietPhieuTinhPhi ctp
+WHERE ctp.MaChiDinh IS NOT NULL
+ORDER BY ctp.MaChiDinh;
+```
+
 ### 8.7. Quản lý phiếu khám
 
 Màn hình **Phiếu khám** đọc danh sách, thống kê, bộ lọc và nội dung chi tiết từ SQL

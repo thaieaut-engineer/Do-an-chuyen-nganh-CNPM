@@ -2,6 +2,8 @@ package view;
 
 import bus.visit.LuotKhamBUS;
 import bus.visit.VisitException;
+import bus.serviceorder.ServiceOrderBUS;
+import bus.serviceorder.ServiceOrderException;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -45,6 +47,8 @@ import model.visit.VisitFilter;
 import model.visit.VisitListItem;
 import model.visit.VisitPage;
 import model.visit.VisitStats;
+import model.serviceorder.ServiceOrderDetail;
+import model.serviceorder.ServiceOrderListItem;
 
 final class VisitPanel extends JPanel {
     private static final Logger LOGGER = Logger.getLogger(VisitPanel.class.getName());
@@ -54,6 +58,7 @@ final class VisitPanel extends JPanel {
 
     private final AuthenticatedSession session;
     private final LuotKhamBUS visitBUS;
+    private final ServiceOrderBUS serviceOrderBUS;
     private final JTextField searchField = new JTextField();
     private final JCheckBox dateRangeEnabled = new JCheckBox("Lọc thời gian");
     private final JSpinner fromDate = new JSpinner(new SpinnerDateModel());
@@ -74,6 +79,7 @@ final class VisitPanel extends JPanel {
     private final JButton previousButton = new JButton("Trước");
     private final JButton nextButton = new JButton("Sau");
     private final JButton detailButton = new JButton("Xem chi tiết");
+    private final JButton serviceOrdersButton = new JButton("Xem chỉ định");
     private final JButton advanceButton = new JButton("Cập nhật trạng thái");
     private final DefaultTableModel tableModel = new DefaultTableModel(
             new Object[]{"Mã lượt", "Mã BN", "Họ tên bệnh nhân", "Bác sĩ",
@@ -90,12 +96,16 @@ final class VisitPanel extends JPanel {
     private long loadVersion;
     private boolean suppressFilterEvents;
 
-    VisitPanel(AuthenticatedSession session, LuotKhamBUS visitBUS) {
+    VisitPanel(
+            AuthenticatedSession session,
+            LuotKhamBUS visitBUS,
+            ServiceOrderBUS serviceOrderBUS) {
         if (session == null || !session.isActive()) {
             throw new IllegalArgumentException("Không thể mở lượt khám khi chưa đăng nhập.");
         }
         this.session = session;
         this.visitBUS = visitBUS;
+        this.serviceOrderBUS = serviceOrderBUS;
         configureDateSpinner(fromDate);
         configureDateSpinner(toDate);
         setLayout(new BorderLayout());
@@ -244,6 +254,10 @@ final class VisitPanel extends JPanel {
         rowActions.setOpaque(false);
         detailButton.addActionListener(event -> showSelectedDetail());
         rowActions.add(detailButton);
+        if (session.hasPermission("KHAM_CHIDINH")) {
+            serviceOrdersButton.addActionListener(event -> showSelectedServiceOrders());
+            rowActions.add(serviceOrdersButton);
+        }
         if (session.hasPermission("KHAM_HOSO")) {
             advanceButton.setForeground(Color.WHITE);
             advanceButton.setBackground(MainFrame.BLUE);
@@ -577,6 +591,7 @@ final class VisitPanel extends JPanel {
         if (selected == null || !visitBUS.canUpdateVisit(session, selected.maNhanVien())) {
             return;
         }
+
         String targetStatus = switch (selected.trangThai()) {
             case "ChoKham" -> "DangKham";
             case "DangKham" -> "ChoKetQua";
@@ -629,6 +644,67 @@ final class VisitPanel extends JPanel {
         }.execute();
     }
 
+    private void showSelectedServiceOrders() {
+        VisitListItem selected = selectedVisit();
+        if (selected == null || !session.hasPermission("KHAM_CHIDINH")) {
+            return;
+        }
+        setControlsEnabled(false);
+        setMessage("Đang tải chỉ định theo lượt khám...", MainFrame.MUTED);
+        new SwingWorker<List<ServiceOrderListItem>, Void>() {
+            @Override
+            protected List<ServiceOrderListItem> doInBackground()
+                    throws ServiceOrderException {
+                return serviceOrderBUS.getByVisit(session, selected.maLuotKham());
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    new ServiceOrderVisitDialog(
+                            javax.swing.SwingUtilities.getWindowAncestor(VisitPanel.this),
+                            selected.maLuotKham(),
+                            get(),
+                            VisitPanel.this::showServiceOrderDetail).setVisible(true);
+                    setMessage(" ", MainFrame.MUTED);
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    showError("Tải chỉ định bị gián đoạn.", exception);
+                } catch (ExecutionException exception) {
+                    showError("Không thể tải chỉ định của lượt khám.",
+                            exception.getCause());
+                } finally {
+                    setControlsEnabled(true);
+                }
+            }
+        }.execute();
+    }
+
+    private void showServiceOrderDetail(long orderId) {
+        new SwingWorker<ServiceOrderDetail, Void>() {
+            @Override
+            protected ServiceOrderDetail doInBackground()
+                    throws ServiceOrderException {
+                return serviceOrderBUS.getById(session, orderId);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    new ServiceOrderDetailDialog(
+                            javax.swing.SwingUtilities.getWindowAncestor(VisitPanel.this),
+                            get()).setVisible(true);
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    showError("Tải chi tiết chỉ định bị gián đoạn.", exception);
+                } catch (ExecutionException exception) {
+                    showError("Không thể tải chi tiết chỉ định.",
+                            exception.getCause());
+                }
+            }
+        }.execute();
+    }
+
     private VisitListItem selectedVisit() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow < 0) {
@@ -644,6 +720,9 @@ final class VisitPanel extends JPanel {
     private void updateSelectionActions() {
         VisitListItem selected = selectedVisit();
         detailButton.setEnabled(selected != null);
+        if (serviceOrdersButton.getParent() != null) {
+            serviceOrdersButton.setEnabled(selected != null);
+        }
         if (advanceButton.getParent() == null) {
             return;
         }
@@ -718,6 +797,9 @@ final class VisitPanel extends JPanel {
         table.setEnabled(enabled);
         if (!enabled) {
             detailButton.setEnabled(false);
+            if (serviceOrdersButton.getParent() != null) {
+                serviceOrdersButton.setEnabled(false);
+            }
             if (advanceButton.getParent() != null) {
                 advanceButton.setEnabled(false);
             }
