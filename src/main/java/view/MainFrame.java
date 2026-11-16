@@ -13,6 +13,7 @@ import bus.reception.TiepNhanBUS;
 import bus.serviceorder.ServiceOrderBUS;
 import bus.visit.LuotKhamBUS;
 import bus.warehouse.WarehouseBUS;
+import bus.chemical.ChemicalBUS;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -48,6 +49,7 @@ public class MainFrame extends JFrame {
     private final BenhNhanBUS patientBUS = new BenhNhanBUS();
     private final DonThuocBUS prescriptionBUS = new DonThuocBUS();
     private final WarehouseBUS warehouseBUS = new WarehouseBUS();
+    private final ChemicalBUS chemicalBUS = new ChemicalBUS();
     private final SidebarPanel sidebar;
     private final HeaderPanel header;
     private final JPanel pageHost = new JPanel(new BorderLayout());
@@ -60,6 +62,7 @@ public class MainFrame extends JFrame {
     private ServiceOrderPanel serviceOrderPanel;
     private PrescriptionPanel prescriptionPanel;
     private MedicineWarehousePanel warehousePanel;
+    private ChemicalWarehousePanel chemicalWarehousePanel;
     private boolean logoutStarted;
 
     public MainFrame(AuthenticatedSession session) {
@@ -189,6 +192,11 @@ public class MainFrame extends JFrame {
                 warehousePanel.showSection(title);
             }
             page = warehousePanel;
+        } else if (title.equals("Kho hóa chất")) {
+            if (chemicalWarehousePanel == null) {
+                chemicalWarehousePanel = new ChemicalWarehousePanel(session, chemicalBUS);
+            }
+            page = chemicalWarehousePanel;
         } else {
             page = new ModulePanel(title);
         }
