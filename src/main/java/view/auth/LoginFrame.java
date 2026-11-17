@@ -41,6 +41,7 @@ public final class LoginFrame extends JFrame {
     private static final Color TEXT = new Color(34, 48, 67);
     private static final Color MUTED = new Color(119, 132, 149);
     private static final Color BORDER = new Color(229, 234, 240);
+    private static final Color SURFACE = new Color(248, 250, 253);
 
     private final JTextField username = new JTextField();
     private final JPasswordField password = new JPasswordField();
@@ -53,8 +54,8 @@ public final class LoginFrame extends JFrame {
     public LoginFrame() {
         super("Đăng nhập | Phòng khám Thu Cúc");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1280, 720);
-        setMinimumSize(new Dimension(1080, 680));
+        setSize(1020, 620);
+        setMinimumSize(new Dimension(900, 560));
         setLocationRelativeTo(null);
         setContentPane(createContent());
         getRootPane().setDefaultButton(loginButton);
@@ -64,14 +65,28 @@ public final class LoginFrame extends JFrame {
 
     private JPanel createContent() {
         JPanel root = new JPanel(new BorderLayout());
-        root.setBackground(Color.WHITE);
+        root.setBackground(SURFACE);
 
         JPanel form = createFormPanel();
-        form.setPreferredSize(new Dimension(420, 0));
-        form.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 0, 1, BORDER),
-                new EmptyBorder(36, 34, 32, 34)));
-        root.add(form, BorderLayout.WEST);
+        form.setBorder(new EmptyBorder(38, 38, 36, 38));
+        JPanel formCard = new RoundedPanel(22, Color.WHITE);
+        formCard.setLayout(new BorderLayout());
+        formCard.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(232, 237, 243)),
+                new EmptyBorder(0, 0, 0, 0)));
+        formCard.add(form, BorderLayout.CENTER);
+        formCard.setPreferredSize(new Dimension(392, 510));
+
+        JPanel formArea = new JPanel(new GridBagLayout());
+        formArea.setBackground(SURFACE);
+        formArea.setBorder(new EmptyBorder(26, 28, 26, 28));
+        GridBagConstraints cardConstraints = new GridBagConstraints();
+        cardConstraints.fill = GridBagConstraints.BOTH;
+        cardConstraints.weightx = 1;
+        cardConstraints.weighty = 0;
+        cardConstraints.anchor = GridBagConstraints.CENTER;
+        formArea.add(formCard, cardConstraints);
+        root.add(formArea, BorderLayout.WEST);
         root.add(new WelcomePanel(), BorderLayout.CENTER);
         return root;
     }
@@ -88,6 +103,12 @@ public final class LoginFrame extends JFrame {
         title.setAlignmentX(Component.LEFT_ALIGNMENT);
         title.setForeground(TEXT);
         title.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        JLabel brand = new JLabel("PHÒNG KHÁM  •  THU CÚC");
+        brand.setAlignmentX(Component.LEFT_ALIGNMENT);
+        brand.setForeground(BLUE);
+        brand.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        fields.add(brand);
+        fields.add(Box.vertical(14));
         JLabel subtitle = new JLabel("Đăng nhập để tiếp tục vào hệ thống");
         subtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
         subtitle.setForeground(MUTED);
@@ -268,6 +289,9 @@ public final class LoginFrame extends JFrame {
 
     private void styleInput(JTextField input) {
         input.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        input.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(215, 223, 232)),
+                new EmptyBorder(0, 12, 0, 12)));
         input.setPreferredSize(new Dimension(0, 38));
         input.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         input.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -280,6 +304,30 @@ public final class LoginFrame extends JFrame {
             spacer.setPreferredSize(new Dimension(1, height));
             spacer.setMaximumSize(new Dimension(Integer.MAX_VALUE, height));
             return spacer;
+        }
+    }
+
+    private static final class RoundedPanel extends JPanel {
+        private final int radius;
+        private final Color fill;
+
+        private RoundedPanel(int radius, Color fill) {
+            this.radius = radius;
+            this.fill = fill;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics graphics) {
+            Graphics2D g2 = (Graphics2D) graphics.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(new Color(35, 55, 80, 18));
+            g2.fillRoundRect(2, 4, getWidth() - 4, getHeight() - 2, radius, radius);
+            g2.setColor(fill);
+            g2.fillRoundRect(0, 0, getWidth() - 4, getHeight() - 4, radius, radius);
+            g2.dispose();
+            super.paintComponent(graphics);
         }
     }
 
@@ -306,8 +354,8 @@ public final class LoginFrame extends JFrame {
             double scale = Math.max(
                     (double) panelWidth / 900,
                     (double) panelHeight / 700);
-            int width = (int) Math.ceil(panelWidth / scale);
-            int height = (int) Math.ceil(panelHeight / scale);
+            int width = (int) Math.ceil(900 * scale);
+            int height = (int) Math.ceil(700 * scale);
             Graphics2D g2 = (Graphics2D) graphics.create();
             Path2D rightRoundedClip = new Path2D.Float();
             rightRoundedClip.moveTo(0, 0);
@@ -322,8 +370,7 @@ public final class LoginFrame extends JFrame {
             g2.setRenderingHint(
                     RenderingHints.KEY_INTERPOLATION,
                     RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-            g2.drawImage(background.getImage(), 0, 0, width, height,
-                    0, 0, 900, 700, this);
+            g2.drawImage(background.getImage(), 0, 0, width, height, this);
 
             java.awt.GradientPaint overlay = new java.awt.GradientPaint(
                     0, panelHeight * 0.48f, new Color(20, 42, 91, 0),
@@ -334,6 +381,8 @@ public final class LoginFrame extends JFrame {
             int left = 44;
             int bottom = panelHeight - 48;
             g2.setColor(Color.WHITE);
+            g2.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            g2.drawString("THU CÚC  /  QUẢN LÝ PHÒNG KHÁM", 44, 38);
             g2.setFont(new Font("Segoe UI", Font.BOLD, 32));
             g2.drawString("Chào mừng trở lại", left, bottom - 44);
             g2.setFont(new Font("Segoe UI", Font.PLAIN, 15));

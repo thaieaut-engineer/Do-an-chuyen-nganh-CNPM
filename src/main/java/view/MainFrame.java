@@ -14,6 +14,7 @@ import bus.serviceorder.ServiceOrderBUS;
 import bus.visit.LuotKhamBUS;
 import bus.warehouse.WarehouseBUS;
 import bus.chemical.ChemicalBUS;
+import bus.fee.FeeBUS;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -50,6 +51,7 @@ public class MainFrame extends JFrame {
     private final DonThuocBUS prescriptionBUS = new DonThuocBUS();
     private final WarehouseBUS warehouseBUS = new WarehouseBUS();
     private final ChemicalBUS chemicalBUS = new ChemicalBUS();
+    private final FeeBUS feeBUS = new FeeBUS();
     private final SidebarPanel sidebar;
     private final HeaderPanel header;
     private final JPanel pageHost = new JPanel(new BorderLayout());
@@ -63,6 +65,7 @@ public class MainFrame extends JFrame {
     private PrescriptionPanel prescriptionPanel;
     private MedicineWarehousePanel warehousePanel;
     private ChemicalWarehousePanel chemicalWarehousePanel;
+    private FeePanel feePanel;
     private boolean logoutStarted;
 
     public MainFrame(AuthenticatedSession session) {
@@ -197,6 +200,11 @@ public class MainFrame extends JFrame {
                 chemicalWarehousePanel = new ChemicalWarehousePanel(session, chemicalBUS);
             }
             page = chemicalWarehousePanel;
+        } else if (title.equals("Viện phí")) {
+            if (feePanel == null) {
+                feePanel = new FeePanel(session, feeBUS);
+            }
+            page = feePanel;
         } else {
             page = new ModulePanel(title);
         }
