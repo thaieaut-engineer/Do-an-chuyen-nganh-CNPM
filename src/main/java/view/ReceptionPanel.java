@@ -300,9 +300,7 @@ final class ReceptionPanel extends JPanel {
                     Thread.currentThread().interrupt();
                 } catch (ExecutionException exception) {
                     Throwable rootCause = exception.getCause() != null ? exception.getCause() : exception;
-                    String detail = rootCause.getMessage() != null && !rootCause.getMessage().isBlank()
-                            ? rootCause.getMessage()
-                            : "Không thể tải dữ liệu tham chiếu.";
+                    String detail = readableError(rootCause, "Không thể tải dữ liệu tham chiếu.");
                     JOptionPane.showMessageDialog(ReceptionPanel.this,
                             detail,
                             "Tiếp nhận bệnh nhân",
@@ -348,9 +346,7 @@ final class ReceptionPanel extends JPanel {
                             JOptionPane.ERROR_MESSAGE);
                 } catch (ExecutionException exception) {
                     Throwable rootCause = exception.getCause() != null ? exception.getCause() : exception;
-                    String detail = rootCause.getMessage() != null && !rootCause.getMessage().isBlank()
-                            ? rootCause.getMessage()
-                            : "Không thể tải dữ liệu tiếp nhận.";
+                    String detail = readableError(rootCause, "Không thể tải dữ liệu tiếp nhận.");
                     JOptionPane.showMessageDialog(ReceptionPanel.this,
                             detail,
                             "Tiếp nhận bệnh nhân",
@@ -454,6 +450,25 @@ final class ReceptionPanel extends JPanel {
 
     private String safe(String value) {
         return value == null || value.isBlank() ? "—" : value;
+    }
+
+    private String readableError(Throwable error, String fallback) {
+        if (error == null) {
+            return fallback;
+        }
+        String summary = error.getMessage();
+        Throwable root = error;
+        while (root.getCause() != null) {
+            root = root.getCause();
+        }
+        String technical = root.getMessage();
+        if (technical != null && !technical.isBlank()
+                && root != error
+                && (summary == null || !summary.contains(technical))) {
+            return (summary == null || summary.isBlank() ? fallback : summary)
+                    + "\nChi tiết hệ thống: " + technical;
+        }
+        return summary == null || summary.isBlank() ? fallback : summary;
     }
 
     private record DoctorChoice(String id, String label) {

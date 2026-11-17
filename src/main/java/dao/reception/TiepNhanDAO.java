@@ -20,22 +20,18 @@ public final class TiepNhanDAO {
                 SELECT
                     (SELECT COUNT(*)
                      FROM dbo.LichHen lh
-                     WHERE lh.ThoiGianHen >= CAST(SYSDATETIME() AS date)
-                       AND lh.ThoiGianHen < DATEADD(day, 1, CAST(SYSDATETIME() AS date))) AS TotalToday,
+                     WHERE CAST(lh.ThoiGianHen AS date) = CAST(SYSDATETIME() AS date)) AS TotalToday,
                     (SELECT COUNT(*)
                      FROM dbo.LichHen lh
-                     WHERE lh.ThoiGianHen >= CAST(SYSDATETIME() AS date)
-                       AND lh.ThoiGianHen < DATEADD(day, 1, CAST(SYSDATETIME() AS date))
+                     WHERE CAST(lh.ThoiGianHen AS date) = CAST(SYSDATETIME() AS date)
                        AND lh.TrangThai IN (N'ChoXacNhan', N'DaXacNhan', N'DaDen')
                        AND NOT EXISTS (SELECT 1 FROM dbo.LuotKham lv WHERE lv.MaLichHen = lh.MaLichHen)) AS WaitingForReception,
                     (SELECT COUNT(*)
                      FROM dbo.LuotKham lv
-                     WHERE lv.ThoiGianTiepNhan >= CAST(SYSDATETIME() AS date)
-                       AND lv.ThoiGianTiepNhan < DATEADD(day, 1, CAST(SYSDATETIME() AS date))) AS ReceivedToday,
+                     WHERE CAST(lv.ThoiGianTiepNhan AS date) = CAST(SYSDATETIME() AS date)) AS ReceivedToday,
                     (SELECT COUNT(*)
                      FROM dbo.LichHen lh
-                     WHERE lh.ThoiGianHen >= CAST(SYSDATETIME() AS date)
-                       AND lh.ThoiGianHen < DATEADD(day, 1, CAST(SYSDATETIME() AS date))
+                     WHERE CAST(lh.ThoiGianHen AS date) = CAST(SYSDATETIME() AS date)
                        AND lh.TrangThai IN (N'DaHuy', N'VangMat')) AS CancelledOrNoShow
                 """;
         try (Connection connection = DatabaseConnection.getConnection();
@@ -50,7 +46,7 @@ public final class TiepNhanDAO {
                     result.getLong("ReceivedToday"),
                     result.getLong("CancelledOrNoShow"));
         } catch (SQLException exception) {
-            throw new RuntimeException("Không thể tải thống kê tiếp nhận từ SQL Server.", exception);
+            throw databaseError("Không thể tải thống kê tiếp nhận từ SQL Server.", exception);
         }
     }
 
@@ -79,7 +75,8 @@ public final class TiepNhanDAO {
                   AND (? = N'' OR lh.TrangThai = ?)
                   AND (? IS NULL OR CAST(lh.ThoiGianHen AS date) = ?)
                   AND (? = N'' OR lh.MaNhanVien = ?)
-                  AND (CASE WHEN ? = 1 THEN lv.MaLuotKham IS NOT NULL ELSE lv.MaLuotKham IS NULL END)
+                  AND ((? = 1 AND lv.MaLuotKham IS NOT NULL)
+                       OR (? = 0 AND lv.MaLuotKham IS NULL))
                   AND lh.TrangThai IN (N'ChoXacNhan', N'DaXacNhan', N'DaDen')
                 ORDER BY lh.ThoiGianHen, lh.MaLichHen
                 """;
@@ -94,7 +91,6 @@ public final class TiepNhanDAO {
             statement.setString(param++, pattern);
             statement.setString(param++, pattern);
             statement.setString(param++, pattern);
-            statement.setString(param++, pattern);
             statement.setNString(param++, status == null ? "" : status);
             statement.setNString(param++, status == null ? "" : status);
             if (date == null) {
@@ -109,6 +105,7 @@ public final class TiepNhanDAO {
             }
             statement.setString(param++, doctorId == null ? "" : doctorId);
             statement.setString(param++, doctorId == null ? "" : doctorId);
+            statement.setInt(param++, receivedOnly ? 1 : 0);
             statement.setInt(param++, receivedOnly ? 1 : 0);
             try (ResultSet result = statement.executeQuery()) {
                 while (result.next()) {
@@ -131,7 +128,7 @@ public final class TiepNhanDAO {
             }
             return list;
         } catch (SQLException exception) {
-            throw new RuntimeException("Không thể tải danh sách lịch hẹn tiếp nhận.", exception);
+            throw databaseError("Không thể tải danh sách lịch hẹn tiếp nhận.", exception);
         }
     }
 
@@ -155,7 +152,6 @@ public final class TiepNhanDAO {
              PreparedStatement statement = connection.prepareStatement(sql)) {
             int param = 1;
             statement.setNString(param++, normalized);
-            statement.setString(param++, pattern);
             statement.setString(param++, pattern);
             statement.setString(param++, pattern);
             statement.setString(param++, pattern);
@@ -185,7 +181,7 @@ public final class TiepNhanDAO {
             }
             return visits;
         } catch (SQLException exception) {
-            throw new RuntimeException("Không thể tải lượt khám đã tiếp nhận.", exception);
+            throw databaseError("Không thể tải lượt khám đã tiếp nhận.", exception);
         }
     }
 
@@ -369,5 +365,12 @@ public final class TiepNhanDAO {
 
     private String escapeLike(String input) {
         return input == null ? "" : input.replace("~", "~~").replace("%", "~%").replace("_", "~_");
+    }
+
+    private RuntimeException databaseError(String message, SQLException cause) {
+        String detail = cause.getMessage();
+        String fullMessage = detail == null || detail.isBlank()
+                ? message : message + " Chi tiết hệ thống: " + detail;
+        return new RuntimeException(fullMessage, cause);
     }
 }

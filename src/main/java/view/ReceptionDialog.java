@@ -40,6 +40,7 @@ final class ReceptionDialog extends JDialog {
     private final JTextArea appointmentInfo = new JTextArea(8, 28);
     private final JTextArea noteArea = new JTextArea(3, 30);
     private boolean busy;
+    private boolean detailsLoaded;
 
     ReceptionDialog(Frame owner, AuthenticatedSession session, TiepNhanBUS receptionBUS, long appointmentId) {
         super(owner, "Tiếp nhận bệnh nhân", true);
@@ -81,6 +82,7 @@ final class ReceptionDialog extends JDialog {
         c.gridy = 1;
         c.gridx = 0;
         c.weighty = 1;
+        c.fill = GridBagConstraints.BOTH;
         patientInfo.setEditable(false);
         patientInfo.setLineWrap(true);
         patientInfo.setWrapStyleWord(true);
@@ -104,16 +106,22 @@ final class ReceptionDialog extends JDialog {
         c.gridx = 0;
         c.gridwidth = 2;
         c.weighty = 0;
+        c.fill = GridBagConstraints.HORIZONTAL;
         JLabel noteLabel = new JLabel("Ghi chú tiếp nhận");
         noteLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
         noteLabel.setForeground(MainFrame.TEXT);
         fields.add(noteLabel, c);
         c.gridy = 3;
+        c.fill = GridBagConstraints.BOTH;
+        c.weighty = 0;
         noteArea.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(MainFrame.BORDER),
                 new EmptyBorder(8, 8, 8, 8)));
         noteArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        fields.add(new JScrollPane(noteArea), c);
+        noteArea.setRows(4);
+        JScrollPane noteScroll = new JScrollPane(noteArea);
+        noteScroll.setPreferredSize(new Dimension(0, 88));
+        fields.add(noteScroll, c);
 
         message.setForeground(new Color(190, 62, 62));
         message.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -139,6 +147,7 @@ final class ReceptionDialog extends JDialog {
     }
 
     private void reloadDetails() {
+        detailsLoaded = false;
         setBusy(true, "Đang tải thông tin tiếp nhận...");
         new SwingWorker<ReceptionAppointment, Void>() {
             @Override
@@ -165,6 +174,7 @@ final class ReceptionDialog extends JDialog {
                             + "Chuyên khoa: " + safe(appointment.tenChuyenKhoa()) + "\n"
                             + "Lý do khám: " + safe(appointment.lyDoKham()) + "\n"
                             + "Trạng thái: " + safe(appointment.trangThai()));
+                    detailsLoaded = true;
                     setBusy(false, "Sẵn sàng tiếp nhận bệnh nhân.");
                 } catch (InterruptedException exception) {
                     Thread.currentThread().interrupt();
@@ -222,9 +232,10 @@ final class ReceptionDialog extends JDialog {
 
     private void setBusy(boolean value, String text) {
         busy = value;
-        confirmButton.setEnabled(!value);
+        confirmButton.setEnabled(!value && detailsLoaded);
         cancelButton.setEnabled(!value);
-        message.setForeground(value ? MainFrame.MUTED : new Color(190, 62, 62));
+        message.setForeground(value ? MainFrame.MUTED
+                : detailsLoaded ? new Color(45, 130, 90) : new Color(190, 62, 62));
         message.setText(text);
     }
 

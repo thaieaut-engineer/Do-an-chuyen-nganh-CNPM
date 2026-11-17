@@ -16,6 +16,7 @@ import bus.warehouse.WarehouseBUS;
 import bus.chemical.ChemicalBUS;
 import bus.fee.FeeBUS;
 import bus.schedule.ScheduleBUS;
+import bus.account.AccountBUS;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -55,6 +56,7 @@ public class MainFrame extends JFrame {
     private final ChemicalBUS chemicalBUS = new ChemicalBUS();
     private final FeeBUS feeBUS = new FeeBUS();
     private final ScheduleBUS scheduleBUS = new ScheduleBUS();
+    private final AccountBUS accountBUS = new AccountBUS();
     private final SidebarPanel sidebar;
     private final HeaderPanel header;
     private final JPanel pageHost = new JPanel(new BorderLayout());
@@ -70,6 +72,7 @@ public class MainFrame extends JFrame {
     private ChemicalWarehousePanel chemicalWarehousePanel;
     private FeePanel feePanel;
     private SchedulePanel schedulePanel;
+    private AccountPanel accountPanel;
     private boolean logoutStarted;
 
     public MainFrame(AuthenticatedSession session) {
@@ -215,6 +218,13 @@ public class MainFrame extends JFrame {
                 schedulePanel = new SchedulePanel(session, scheduleBUS);
             }
             page = schedulePanel;
+        } else if (title.equals("Tài khoản")) {
+            if (accountPanel == null) {
+                accountPanel = new AccountPanel(session, accountBUS);
+            } else {
+                accountPanel.refreshData();
+            }
+            page = accountPanel;
         } else {
             page = new ModulePanel(title);
         }
