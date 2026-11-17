@@ -36,6 +36,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import model.auth.AuthenticatedSession;
+import view.component.UIStyle;
 import model.warehouse.WarehouseModels.Batch;
 import model.warehouse.WarehouseModels.BatchDetail;
 import model.warehouse.WarehouseModels.BatchFilter;
@@ -461,6 +462,7 @@ final class MedicineWarehousePanel extends JPanel {
     }
 
     private void configureTable(JTable table, int[] widths) {
+        UIStyle.table(table);
         table.setRowHeight(35);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setAutoCreateRowSorter(true);

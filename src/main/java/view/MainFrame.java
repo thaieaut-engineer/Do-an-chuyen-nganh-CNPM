@@ -15,6 +15,7 @@ import bus.visit.LuotKhamBUS;
 import bus.warehouse.WarehouseBUS;
 import bus.chemical.ChemicalBUS;
 import bus.fee.FeeBUS;
+import bus.schedule.ScheduleBUS;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -28,6 +29,7 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import model.auth.AuthenticatedSession;
+import view.component.UIStyle;
 
 public class MainFrame extends JFrame {
     static final Color NAVY = new Color(24, 43, 69);
@@ -52,6 +54,7 @@ public class MainFrame extends JFrame {
     private final WarehouseBUS warehouseBUS = new WarehouseBUS();
     private final ChemicalBUS chemicalBUS = new ChemicalBUS();
     private final FeeBUS feeBUS = new FeeBUS();
+    private final ScheduleBUS scheduleBUS = new ScheduleBUS();
     private final SidebarPanel sidebar;
     private final HeaderPanel header;
     private final JPanel pageHost = new JPanel(new BorderLayout());
@@ -66,6 +69,7 @@ public class MainFrame extends JFrame {
     private MedicineWarehousePanel warehousePanel;
     private ChemicalWarehousePanel chemicalWarehousePanel;
     private FeePanel feePanel;
+    private SchedulePanel schedulePanel;
     private boolean logoutStarted;
 
     public MainFrame(AuthenticatedSession session) {
@@ -109,6 +113,7 @@ public class MainFrame extends JFrame {
         SwingUtilities.invokeLater(() -> {
             try {
                 FlatLightLaf.setup();
+                UIStyle.applyGlobalDefaults();
                 UIManager.put("Button.arc", 12);
                 UIManager.put("Component.arc", 12);
                 UIManager.put("ProgressBar.arc", 12);
@@ -205,6 +210,11 @@ public class MainFrame extends JFrame {
                 feePanel = new FeePanel(session, feeBUS);
             }
             page = feePanel;
+        } else if (title.equals("Lịch làm việc")) {
+            if (schedulePanel == null) {
+                schedulePanel = new SchedulePanel(session, scheduleBUS);
+            }
+            page = schedulePanel;
         } else {
             page = new ModulePanel(title);
         }

@@ -148,6 +148,11 @@ final class AppointmentDialog extends JDialog {
 
         message.setForeground(new Color(190, 62, 62));
         message.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        message.setOpaque(true);
+        message.setBackground(new Color(255, 248, 248));
+        message.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(245, 211, 215)),
+                new EmptyBorder(7, 10, 7, 10)));
         JPanel footer = new JPanel(new BorderLayout(8, 0));
         footer.setOpaque(false);
         footer.add(message, BorderLayout.CENTER);
@@ -446,22 +451,17 @@ final class AppointmentDialog extends JDialog {
                 }
                 try {
                     List<AppointmentDoctor> availableDoctors = get();
-                    if (availableDoctors.isEmpty() && specialty != null) {
-                        availableDoctors = knownDoctors.stream()
-                                .filter(doctor -> doctor.maChuyenKhoa() != null
-                                        && doctor.maChuyenKhoa().equals(specialty.maChuyenKhoa()))
-                                .toList();
-                    }
                     updatingSelectors = true;
                     for (AppointmentDoctor doctor : availableDoctors) {
                         doctorSelector.addItem(doctor);
                     }
+                    doctorSelector.setEnabled(!availableDoctors.isEmpty());
                     if (selectedDoctorId != null) {
                         selectDoctor(selectedDoctorId);
                     }
                     updatingSelectors = false;
                     setOptionsLoading(false, availableDoctors.isEmpty()
-                            ? "Ngày này chưa có bác sĩ được phân công đã xác nhận; đang hiển thị bác sĩ chuyên khoa có sẵn."
+                            ? "Ngày này chưa có bác sĩ được phân công đã xác nhận; hãy chọn ngày khác."
                             : " ");
                     if (doctorSelector.getSelectedItem() != null) {
                         reloadSlots(selectedSlotId);
@@ -587,9 +587,9 @@ final class AppointmentDialog extends JDialog {
                     setBusy(false, "Thao tác bị gián đoạn. Vui lòng thử lại.");
                 } catch (ExecutionException exception) {
                     Throwable cause = exception.getCause();
-                    setBusy(false, cause instanceof AppointmentException
-                            ? cause.getMessage()
-                            : "Không thể lưu lịch hẹn. Vui lòng thử lại.");
+                    String detail = readableFailure(cause,
+                            "Không thể lưu lịch hẹn. Vui lòng kiểm tra lại dữ liệu và thử lại.");
+                    setBusy(false, detail);
                     if (!(cause instanceof AppointmentException)) {
                         LOGGER.log(Level.SEVERE, "Unexpected appointment save error.", cause);
                     }
@@ -640,7 +640,7 @@ final class AppointmentDialog extends JDialog {
         addPatientButton.setEnabled(!value && appointmentId == null && canAddPatients);
         saveButton.setEnabled(!value && slotSelector.getSelectedItem() != null);
         message.setForeground(MainFrame.MUTED);
-        message.setText(text);
+        setMessageText(text);
     }
 
     private void setOptionsLoading(boolean value, String text) {
@@ -653,22 +653,63 @@ final class AppointmentDialog extends JDialog {
         addPatientButton.setEnabled(!value && appointmentId == null && canAddPatients);
         saveButton.setEnabled(!value && slotSelector.getSelectedItem() != null);
         message.setForeground(MainFrame.MUTED);
-        message.setText(text);
+        setMessageText(text);
     }
 
     private void updateSaveState() {
         saveButton.setEnabled(!busy && slotSelector.getSelectedItem() != null);
     }
 
+    private void setMessageText(String text) {
+        String safe = text == null ? "" : text
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\n", "<br>");
+        message.setText("<html>" + safe + "</html>");
+        message.setToolTipText(text);
+        String normalized = text == null ? "" : text.toLowerCase();
+        boolean error = normalized.contains("không thể")
+                || normalized.contains("lỗi")
+                || normalized.contains("chi tiết hệ thống");
+        boolean warning = normalized.contains("không có")
+                || normalized.contains("đã hết")
+                || normalized.contains("vui lòng chọn");
+        message.setForeground(error ? new Color(190, 62, 62)
+                : warning ? new Color(170, 110, 30) : MainFrame.MUTED);
+        message.setBackground(error ? new Color(255, 248, 248)
+                : warning ? new Color(255, 251, 239) : new Color(248, 250, 252));
+    }
+
     private void fail(String error, Throwable cause) {
-        String display = cause instanceof AppointmentException
-                ? cause.getMessage() : error;
+        String display = readableFailure(cause, error);
         setBusy(false, display);
         if (!(cause instanceof AppointmentException)) {
             LOGGER.log(Level.SEVERE, "Unexpected appointment dialog error.", cause);
         }
         JOptionPane.showMessageDialog(
                 this, display, "Lịch hẹn", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private String readableFailure(Throwable error, String fallback) {
+        if (error == null) {
+            return fallback;
+        }
+        String businessMessage = error.getMessage();
+        Throwable root = error;
+        while (root.getCause() != null) {
+            root = root.getCause();
+        }
+        String rootMessage = root.getMessage();
+        if (root != error && rootMessage != null && !rootMessage.isBlank()
+                && (businessMessage == null
+                || !businessMessage.toLowerCase().contains("chi tiết hệ thống"))
+                && (businessMessage == null || businessMessage.isBlank()
+                || businessMessage.toLowerCase().contains("không thể"))) {
+            return businessMessage + "\nChi tiết hệ thống: " + rootMessage;
+        }
+        return businessMessage == null || businessMessage.isBlank()
+                ? fallback : businessMessage;
     }
 
     private record InitialData(

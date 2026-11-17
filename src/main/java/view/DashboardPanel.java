@@ -42,6 +42,7 @@ import model.dashboard.DashboardData;
 import model.dashboard.DashboardStatistics;
 import model.dashboard.UpcomingAppointment;
 import view.component.AppIcon;
+import view.component.UIStyle;
 
 final class DashboardPanel extends JPanel {
     private static final Logger LOGGER = Logger.getLogger(DashboardPanel.class.getName());
@@ -137,6 +138,7 @@ final class DashboardPanel extends JPanel {
         refreshButton.setForeground(MainFrame.BLUE);
         refreshButton.setBackground(Color.WHITE);
         refreshButton.setFocusPainted(false);
+        UIStyle.secondaryButton(refreshButton);
         refreshButton.setToolTipText("Tải lại số liệu từ cơ sở dữ liệu");
         refreshButton.addActionListener(event -> loadDashboardData());
         actions.add(refreshButton);
@@ -360,6 +362,7 @@ final class DashboardPanel extends JPanel {
     }
 
     private void styleTable(JTable table) {
+        UIStyle.table(table);
         table.setRowHeight(37);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         table.setForeground(MainFrame.TEXT);
@@ -377,6 +380,7 @@ final class DashboardPanel extends JPanel {
 
     private JButton primaryButton(String text) {
         JButton button = new JButton(text);
+        UIStyle.primaryButton(button);
         button.setFont(new Font("Segoe UI", Font.BOLD, 12));
         button.setForeground(Color.WHITE);
         button.setBackground(MainFrame.BLUE);

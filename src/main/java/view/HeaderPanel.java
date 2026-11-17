@@ -18,6 +18,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import view.component.AppIcon;
+import view.component.UIStyle;
 
 final class HeaderPanel extends JPanel {
     private final JLabel pageTitle = new JLabel("Tổng quan");
@@ -43,6 +44,7 @@ final class HeaderPanel extends JPanel {
         titleArea.add(pageTitle, BorderLayout.CENTER);
 
         JTextField search = new JTextField();
+        UIStyle.field(search);
         search.putClientProperty("JTextField.placeholderText", "Tìm nhanh chức năng...");
         search.setPreferredSize(new Dimension(280, 36));
         search.addActionListener(event -> searchPage(search, pages, onNavigate));
@@ -64,6 +66,10 @@ final class HeaderPanel extends JPanel {
         account.setBorder(new EmptyBorder(6, 6, 6, 4));
         account.setIconTextGap(8);
         account.setFocusPainted(false);
+        account.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        account.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(MainFrame.BORDER),
+                new EmptyBorder(7, 10, 7, 10)));
         account.addActionListener(event -> showAccountMenu(
                 account, session, onLogout, onChangePassword));
 

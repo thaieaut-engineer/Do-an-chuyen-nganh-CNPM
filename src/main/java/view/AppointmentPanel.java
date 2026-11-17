@@ -46,6 +46,7 @@ import model.appointment.AppointmentSpecialty;
 import model.appointment.AppointmentStats;
 import model.appointment.LichHen;
 import model.auth.AuthenticatedSession;
+import view.component.UIStyle;
 
 final class AppointmentPanel extends JPanel {
     private static final Logger LOGGER =
@@ -661,6 +662,9 @@ final class AppointmentPanel extends JPanel {
                     message.setText(appointmentId == null
                             ? "Đã đặt lịch hẹn " + savedId + "."
                             : "Đã cập nhật lịch hẹn " + savedId + ".");
+                    UIStyle.showSuccess(this, appointmentId == null
+                            ? "Đặt lịch hẹn thành công.\nMã lịch hẹn: " + savedId
+                            : "Cập nhật lịch hẹn thành công.\nMã lịch hẹn: " + savedId);
                     refreshData();
                 });
         dialog.setVisible(true);

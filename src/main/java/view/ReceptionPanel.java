@@ -35,6 +35,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import model.appointment.AppointmentDoctor;
 import model.auth.AuthenticatedSession;
+import view.component.UIStyle;
 import model.reception.ReceptionAppointment;
 import model.reception.ReceptionStats;
 import model.reception.ReceptionVisit;
@@ -213,6 +214,7 @@ final class ReceptionPanel extends JPanel {
         panel.add(title, BorderLayout.NORTH);
 
         appointmentTable.setModel(appointmentModel);
+        UIStyle.table(appointmentTable);
         appointmentTable.setRowHeight(36);
         appointmentTable.setFillsViewportHeight(true);
         appointmentTable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
@@ -240,6 +242,7 @@ final class ReceptionPanel extends JPanel {
         panel.add(title, BorderLayout.NORTH);
 
         visitTable.setModel(visitModel);
+        UIStyle.table(visitTable);
         visitTable.setRowHeight(36);
         visitTable.setFillsViewportHeight(true);
         visitTable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);

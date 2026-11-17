@@ -37,6 +37,7 @@ import model.patient.BenhNhan;
 import model.patient.PatientFilter;
 import model.patient.PatientPage;
 import view.component.AppIcon;
+import view.component.UIStyle;
 
 final class PatientPanel extends JPanel {
     private static final Logger LOGGER = Logger.getLogger(PatientPanel.class.getName());
@@ -160,6 +161,7 @@ final class PatientPanel extends JPanel {
                 new EmptyBorder(16, 16, 14, 16)));
         card.add(createToolbar(), BorderLayout.NORTH);
 
+        UIStyle.table(table);
         table.setRowHeight(40);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         table.setForeground(MainFrame.TEXT);

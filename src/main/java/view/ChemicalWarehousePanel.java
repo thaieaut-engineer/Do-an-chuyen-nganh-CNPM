@@ -12,6 +12,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import model.auth.AuthenticatedSession;
 import model.chemical.ChemicalModels.*;
+import view.component.UIStyle;
 
 public final class ChemicalWarehousePanel extends JPanel {
     private static final int SIZE=20;
@@ -24,9 +25,9 @@ public final class ChemicalWarehousePanel extends JPanel {
     private int chemicalPage,batchPage,historyPage; private Page<Chemical> chemicals; private Page<Batch> batches;
     public ChemicalWarehousePanel(AuthenticatedSession session,ChemicalBUS bus){this.session=session;this.bus=bus;setLayout(new BorderLayout(0,12));setBackground(MainFrame.PAGE);setBorder(BorderFactory.createEmptyBorder(16,18,18,18));add(header(),BorderLayout.NORTH);tabs.addTab("Danh mục hóa chất",chemicalTab());tabs.addTab("Tồn theo lô",batchTab());tabs.addTab("Lịch sử nhập xuất",historyTab());tabs.addChangeListener(e->loadActive());add(tabs,BorderLayout.CENTER);loadStats();loadActive();}
     private JPanel header(){JPanel p=new JPanel(new BorderLayout(10,0));p.setOpaque(false);JLabel title=new JLabel("Kho hóa chất");title.setFont(new Font("Segoe UI",Font.BOLD,24));title.setForeground(MainFrame.TEXT);p.add(title,BorderLayout.WEST);p.add(stats,BorderLayout.CENTER);JButton refresh=new JButton("Làm mới");refresh.addActionListener(e->{loadStats();loadActive();});p.add(refresh,BorderLayout.EAST);return p;}
-    private JPanel chemicalTab(){JPanel p=base();p.add(toolbar(chemicalSearch,"Thêm hóa chất",e->edit(null)),BorderLayout.NORTH);JTable t=new JTable(chemicalModel);t.setAutoCreateRowSorter(true);p.add(new JScrollPane(t),BorderLayout.CENTER);return p;}
-    private JPanel batchTab(){JPanel p=base();p.add(toolbar(batchSearch,"Nhập hóa chất",e->importDialog()),BorderLayout.NORTH);JTable t=new JTable(batchModel);t.setAutoCreateRowSorter(true);p.add(new JScrollPane(t),BorderLayout.CENTER);return p;}
-    private JPanel historyTab(){JPanel p=base();p.add(toolbar(historySearch,"Xuất hóa chất",e->exportDialog()),BorderLayout.NORTH);JTable t=new JTable(historyModel);t.setAutoCreateRowSorter(true);p.add(new JScrollPane(t),BorderLayout.CENTER);return p;}
+    private JPanel chemicalTab(){JPanel p=base();p.add(toolbar(chemicalSearch,"Thêm hóa chất",e->edit(null)),BorderLayout.NORTH);JTable t=new JTable(chemicalModel);UIStyle.table(t);t.setAutoCreateRowSorter(true);p.add(new JScrollPane(t),BorderLayout.CENTER);return p;}
+    private JPanel batchTab(){JPanel p=base();p.add(toolbar(batchSearch,"Nhập hóa chất",e->importDialog()),BorderLayout.NORTH);JTable t=new JTable(batchModel);UIStyle.table(t);t.setAutoCreateRowSorter(true);p.add(new JScrollPane(t),BorderLayout.CENTER);return p;}
+    private JPanel historyTab(){JPanel p=base();p.add(toolbar(historySearch,"Xuất hóa chất",e->exportDialog()),BorderLayout.NORTH);JTable t=new JTable(historyModel);UIStyle.table(t);t.setAutoCreateRowSorter(true);p.add(new JScrollPane(t),BorderLayout.CENTER);return p;}
     private JPanel base(){JPanel p=new JPanel(new BorderLayout(0,8));p.setOpaque(false);return p;}
     private JPanel toolbar(JTextField search,String action,java.awt.event.ActionListener listener){JPanel p=new JPanel(new BorderLayout(8,0));p.setOpaque(false);search.setPreferredSize(new Dimension(300,32));search.addActionListener(e->loadActive());p.add(search,BorderLayout.WEST);JButton find=new JButton("Tìm kiếm");find.addActionListener(e->loadActive());p.add(find,BorderLayout.CENTER);if(session.hasPermission("KHO_NHAP")||session.hasPermission("KHO_XUAT")){JButton b=new JButton(action);b.addActionListener(listener);p.add(b,BorderLayout.EAST);}return p;}
     private void loadStats(){worker(()->bus.stats(session),s->stats.setText("Hóa chất: "+s.chemicalCount()+"  ·  Lô: "+s.batchCount()+"  ·  Tồn: "+s.totalStock()+"  ·  Sắp hết hạn: "+s.expiringBatches()+"  ·  Hết hạn: "+s.expiredBatches()));}

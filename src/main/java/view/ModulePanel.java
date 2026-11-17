@@ -19,6 +19,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import view.component.AppIcon;
+import view.component.UIStyle;
 
 final class ModulePanel extends JPanel {
     private final ModuleDefinition definition;
@@ -67,6 +68,7 @@ final class ModulePanel extends JPanel {
         primaryAction.setBorderPainted(false);
         primaryAction.setFocusPainted(false);
         primaryAction.setMargin(new Insets(11, 16, 11, 16));
+        UIStyle.primaryButton(primaryAction);
         primaryAction.addActionListener(event -> showPreviewMessage());
 
         heading.add(labels, BorderLayout.WEST);
@@ -112,6 +114,7 @@ final class ModulePanel extends JPanel {
         JPanel filters = new JPanel(new BorderLayout(10, 0));
         filters.setOpaque(false);
         JTextField search = new JTextField();
+        UIStyle.field(search);
         search.putClientProperty("JTextField.placeholderText", definition.searchHint);
         search.setPreferredSize(new Dimension(320, 38));
         JComboBox<String> statusFilter = new JComboBox<>(definition.statusFilters);
@@ -131,6 +134,7 @@ final class ModulePanel extends JPanel {
                 return false;
             }
         });
+        UIStyle.table(table);
         table.setRowHeight(42);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         table.setForeground(MainFrame.TEXT);

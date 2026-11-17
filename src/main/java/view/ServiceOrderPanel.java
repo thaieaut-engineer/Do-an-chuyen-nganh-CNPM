@@ -41,6 +41,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import model.auth.AuthenticatedSession;
+import view.component.UIStyle;
 import model.serviceorder.ServiceCatalogItem;
 import model.serviceorder.ServiceOrderDetail;
 import model.serviceorder.ServiceOrderFilter;
@@ -389,6 +390,7 @@ final class ServiceOrderPanel extends JPanel {
     }
 
     private void configureTable(JTable table, int[] widths) {
+        UIStyle.table(table);
         table.setRowHeight(36);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setAutoCreateRowSorter(true);

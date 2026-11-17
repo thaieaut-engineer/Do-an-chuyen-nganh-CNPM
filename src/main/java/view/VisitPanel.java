@@ -42,6 +42,7 @@ import javax.swing.table.JTableHeader;
 import model.appointment.AppointmentDoctor;
 import model.appointment.AppointmentSpecialty;
 import model.auth.AuthenticatedSession;
+import view.component.UIStyle;
 import model.visit.VisitDetail;
 import model.visit.VisitFilter;
 import model.visit.VisitListItem;
@@ -314,6 +315,7 @@ final class VisitPanel extends JPanel {
     }
 
     private void configureTable() {
+        UIStyle.table(table);
         table.setRowHeight(36);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setAutoCreateRowSorter(true);

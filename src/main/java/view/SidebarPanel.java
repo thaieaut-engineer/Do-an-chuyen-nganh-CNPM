@@ -217,6 +217,7 @@ final class SidebarPanel extends JPanel {
                 button.setOpaque(false);
                 button.setBorder(new EmptyBorder(9, 11, 9, 8));
                 button.setFocusPainted(false);
+                button.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
                 button.setAlignmentX(LEFT_ALIGNMENT);
                 button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
                 button.addActionListener(event -> onNavigate.accept(item.label));
@@ -234,6 +235,7 @@ final class SidebarPanel extends JPanel {
             toggle.setOpaque(false);
             toggle.setBorder(new EmptyBorder(12, 11, 7, 8));
             toggle.setFocusPainted(false);
+            toggle.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
             toggle.setAlignmentX(LEFT_ALIGNMENT);
             toggle.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
             toggle.addActionListener(event -> {

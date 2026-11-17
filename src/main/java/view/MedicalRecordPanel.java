@@ -41,6 +41,7 @@ import javax.swing.table.JTableHeader;
 import model.appointment.AppointmentDoctor;
 import model.appointment.AppointmentSpecialty;
 import model.auth.AuthenticatedSession;
+import view.component.UIStyle;
 import model.medicalrecord.MedicalRecordDetail;
 import model.medicalrecord.MedicalRecordFilter;
 import model.medicalrecord.MedicalRecordListItem;
@@ -310,6 +311,7 @@ final class MedicalRecordPanel extends JPanel {
     }
 
     private void configureTable() {
+        UIStyle.table(table);
         table.setRowHeight(36);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setAutoCreateRowSorter(true);

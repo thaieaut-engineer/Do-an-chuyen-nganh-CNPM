@@ -41,6 +41,7 @@ import javax.swing.table.JTableHeader;
 import model.appointment.AppointmentDoctor;
 import model.appointment.AppointmentSpecialty;
 import model.auth.AuthenticatedSession;
+import view.component.UIStyle;
 import model.prescription.MedicationCatalogItem;
 import model.prescription.PrescriptionDetail;
 import model.prescription.PrescriptionFilter;
@@ -392,6 +393,7 @@ final class PrescriptionPanel extends JPanel {
     }
 
     private void configureTable(JTable table, int[] widths) {
+        UIStyle.table(table);
         table.setRowHeight(36);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setAutoCreateRowSorter(true);

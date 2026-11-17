@@ -229,7 +229,7 @@ public final class LichHenDAO {
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, specialtyId);
-            statement.setObject(2, date);
+            statement.setDate(2, java.sql.Date.valueOf(date));
             try (ResultSet result = statement.executeQuery()) {
                 while (result.next()) {
                     doctors.add(new AppointmentDoctor(
@@ -359,7 +359,7 @@ public final class LichHenDAO {
             int parameter = 1;
             setNullableLong(statement, parameter++, excludeAppointmentId);
             setNullableLong(statement, parameter++, excludeAppointmentId);
-            statement.setObject(parameter++, date);
+            statement.setDate(parameter++, java.sql.Date.valueOf(date));
             statement.setString(parameter++, doctorId);
             statement.setString(parameter++, specialtyId);
             setNullableLong(statement, parameter++, originalSlotId);
@@ -467,7 +467,7 @@ public final class LichHenDAO {
                     statement.setLong(2, draft.maKhungGio());
                     statement.setString(3, draft.maChuyenKhoa());
                     statement.setString(4, draft.maNhanVien());
-                    statement.setObject(5, appointmentTime);
+                    statement.setTimestamp(5, java.sql.Timestamp.valueOf(appointmentTime));
                     statement.setNString(6, draft.lyDoKham());
                     statement.setString(7, creatorId);
                     statement.setNString(8, draft.ghiChu());
@@ -515,7 +515,7 @@ public final class LichHenDAO {
                     statement.setLong(1, draft.maKhungGio());
                     statement.setString(2, draft.maChuyenKhoa());
                     statement.setString(3, draft.maNhanVien());
-                    statement.setObject(4, appointmentTime);
+                    statement.setTimestamp(4, java.sql.Timestamp.valueOf(appointmentTime));
                     statement.setNString(5, draft.lyDoKham());
                     statement.setNString(6, draft.ghiChu());
                     statement.setLong(7, appointmentId);
@@ -684,7 +684,7 @@ public final class LichHenDAO {
                 """;
         try (PreparedStatement statement = connection.prepareStatement(dayLockSql)) {
             statement.setString(1, doctorId);
-            statement.setObject(2, date);
+            statement.setDate(2, java.sql.Date.valueOf(date));
             try (ResultSet result = statement.executeQuery()) {
                 while (result.next()) {
                     result.getLong(1);
@@ -737,14 +737,14 @@ public final class LichHenDAO {
                   AND lp.NgayLam = ?
                   AND lp.TrangThai = N'DaXacNhan'
                   AND ca.TrangThai = N'HoatDong'
-                  AND ? >= ca.GioBatDau
-                  AND ? <= ca.GioKetThuc
+                  AND CAST(? AS time) >= ca.GioBatDau
+                  AND CAST(? AS time) <= ca.GioKetThuc
                 """;
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, slot.doctorId());
-            statement.setObject(2, slot.date());
-            statement.setObject(3, slot.start());
-            statement.setObject(4, slot.end());
+            statement.setDate(2, java.sql.Date.valueOf(slot.date()));
+            statement.setTime(3, java.sql.Time.valueOf(slot.start()));
+            statement.setTime(4, java.sql.Time.valueOf(slot.end()));
             try (ResultSet result = statement.executeQuery()) {
                 return result.next();
             }
@@ -755,7 +755,7 @@ public final class LichHenDAO {
             throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
                 "SELECT CASE WHEN ? > SYSDATETIME() THEN 1 ELSE 0 END")) {
-            statement.setObject(1, appointmentTime);
+            statement.setTimestamp(1, java.sql.Timestamp.valueOf(appointmentTime));
             try (ResultSet result = statement.executeQuery()) {
                 return result.next() && result.getBoolean(1);
             }
@@ -828,7 +828,8 @@ public final class LichHenDAO {
                        OR other.MaKhungGio <> ?)
                   AND other.ThoiGianHen >= ? AND other.ThoiGianHen < ?
                   AND ((otherSlot.MaKhungGio IS NOT NULL
-                        AND otherSlot.GioBatDau < ? AND otherSlot.GioKetThuc > ?)
+                        AND otherSlot.GioBatDau < CAST(? AS time)
+                        AND otherSlot.GioKetThuc > CAST(? AS time))
                        OR (otherSlot.MaKhungGio IS NULL AND other.ThoiGianHen = ?))
                 """.formatted(column, ACTIVE_APPOINTMENT_STATES);
         LocalDateTime dayStart = slot.date().atStartOfDay();
@@ -838,12 +839,13 @@ public final class LichHenDAO {
             setNullableLong(statement, 3, excludeAppointmentId);
             statement.setInt(4, ignoreSameSlot ? 1 : 0);
             statement.setLong(5, slot.slotId());
-            statement.setObject(6, dayStart);
-            statement.setObject(7, dayStart.plusDays(1));
-            statement.setObject(8, slot.end());
-            statement.setObject(9, slot.start());
-            statement.setObject(10, dayStart.plus(slot.start().toSecondOfDay(),
-                    java.time.temporal.ChronoUnit.SECONDS));
+            statement.setTimestamp(6, java.sql.Timestamp.valueOf(dayStart));
+            statement.setTimestamp(7, java.sql.Timestamp.valueOf(dayStart.plusDays(1)));
+            statement.setTime(8, java.sql.Time.valueOf(slot.end()));
+            statement.setTime(9, java.sql.Time.valueOf(slot.start()));
+            statement.setTimestamp(10, java.sql.Timestamp.valueOf(
+                    dayStart.plus(slot.start().toSecondOfDay(),
+                            java.time.temporal.ChronoUnit.SECONDS)));
             try (ResultSet result = statement.executeQuery()) {
                 return result.next();
             }
@@ -1027,7 +1029,7 @@ public final class LichHenDAO {
         for (int i = 0; i < parameters.size(); i++) {
             Object value = parameters.get(i);
             if (value instanceof LocalDateTime dateTime) {
-                statement.setObject(first + i, dateTime);
+                statement.setTimestamp(first + i, java.sql.Timestamp.valueOf(dateTime));
             } else if (value instanceof String text) {
                 statement.setString(first + i, text);
             } else {
@@ -1125,8 +1127,11 @@ public final class LichHenDAO {
                     "Lịch vừa được cập nhật bởi người dùng khác. Vui lòng tải lại.",
                     cause);
         }
+        String detail = cause.getMessage();
+        String userMessage = detail == null || detail.isBlank()
+                ? message : message + " Chi tiết hệ thống: " + detail;
         return new AppointmentDAOException(
-                AppointmentDAOException.Reason.DATABASE_ERROR, message, cause);
+                AppointmentDAOException.Reason.DATABASE_ERROR, userMessage, cause);
     }
 
     private record QueryConditions(String sql, List<Object> parameters) {
