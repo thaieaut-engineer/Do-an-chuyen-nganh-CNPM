@@ -41,6 +41,12 @@ public final class AuthorizationBUS {
             return true;
         }
         Set<String> requiredPermissions = PAGE_PERMISSIONS.get(page);
+        if (requiredPermissions != null
+                && requiredPermissions.contains("NHANSU_XEM")
+                && !session.hasRole("VT-ADMIN")
+                && !session.hasRole("VT-QUANLY")) {
+            return false;
+        }
         return requiredPermissions != null && session.hasAnyPermission(requiredPermissions);
     }
 

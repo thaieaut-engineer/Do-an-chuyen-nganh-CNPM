@@ -204,6 +204,9 @@ BEGIN TRY
     ) v(MaQuyen, TenQuyen, NhomChucNang, MoTa)
     WHERE NOT EXISTS (SELECT 1 FROM Quyen q WHERE q.MaQuyen = v.MaQuyen);
 
+    DELETE FROM VaiTroQuyen
+    WHERE MaVaiTro = 'VT-LETAN' AND MaQuyen = 'NHANSU_XEM';
+
     INSERT INTO VaiTroQuyen (MaVaiTro, MaQuyen)
     SELECT v.MaVaiTro, v.MaQuyen
     FROM (VALUES
@@ -215,7 +218,6 @@ BEGIN TRY
         ('VT-ADMIN', 'BAOCAO_XEM'), ('VT-ADMIN', 'TAIKHOAN_QUANLY'), ('VT-ADMIN', 'CAUHINH_QUANLY'),
         ('VT-ADMIN', 'NHATKY_XEM'),
         ('VT-LETAN', 'BN_XEM'), ('VT-LETAN', 'BN_SUA'), ('VT-LETAN', 'LH_QUANLY'),
-        ('VT-LETAN', 'NHANSU_XEM'),
         ('VT-BACSI', 'BN_XEM'), ('VT-BACSI', 'LH_QUANLY'), ('VT-BACSI', 'KHAM_HOSO'),
         ('VT-BACSI', 'KHAM_CHIDINH'), ('VT-BACSI', 'DONTHUOC_KE'),
         ('VT-KHO', 'KHO_XEM'), ('VT-KHO', 'KHO_NHAP'), ('VT-KHO', 'KHO_XUAT'),

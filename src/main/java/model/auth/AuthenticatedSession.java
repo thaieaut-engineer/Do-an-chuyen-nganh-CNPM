@@ -85,6 +85,11 @@ public final class AuthenticatedSession {
         return isActive() && permissionCode != null && maQuyen.contains(permissionCode);
     }
 
+    public boolean hasRole(String roleCode) {
+        return isActive() && roleCode != null
+                && vaiTro.stream().anyMatch(role -> roleCode.equals(role.getMaVaiTro()));
+    }
+
     public boolean hasAnyPermission(Set<String> permissionCodes) {
         return isActive() && permissionCodes != null
                 && permissionCodes.stream().anyMatch(this::hasPermission);
