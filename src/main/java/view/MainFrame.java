@@ -19,6 +19,7 @@ import bus.schedule.ScheduleBUS;
 import bus.account.AccountBUS;
 import bus.billing.BillingBUS;
 import bus.insurance.InsuranceBUS;
+import bus.staff.StaffBUS;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -61,6 +62,7 @@ public class MainFrame extends JFrame {
     private final AccountBUS accountBUS = new AccountBUS();
     private final BillingBUS billingBUS = new BillingBUS();
     private final InsuranceBUS insuranceBUS = new InsuranceBUS();
+    private final StaffBUS staffBUS = new StaffBUS();
     private final SidebarPanel sidebar;
     private final HeaderPanel header;
     private final JPanel pageHost = new JPanel(new BorderLayout());
@@ -80,6 +82,8 @@ public class MainFrame extends JFrame {
     private BillingPanel invoicePanel;
     private BillingPanel paymentPanel;
     private InsurancePanel insurancePanel;
+    private StaffPanel staffPanel;
+    private StaffPanel doctorPanel;
     private boolean logoutStarted;
 
     public MainFrame(AuthenticatedSession session) {
@@ -247,6 +251,22 @@ public class MainFrame extends JFrame {
                 insurancePanel = new InsurancePanel(session, insuranceBUS);
             }
             page = insurancePanel;
+        } else if (title.equals("Nhân viên")) {
+            if (staffPanel == null) {
+                staffPanel = new StaffPanel(session, staffBUS, false);
+            }
+            page = staffPanel;
+        } else if (title.equals("Bác sĩ")) {
+            if (doctorPanel == null) {
+                doctorPanel = new StaffPanel(session, staffBUS, true);
+            }
+            page = doctorPanel;
+        } else if (title.equals("Phân quyền") || title.equals("Thiết bị")
+                || title.equals("Đánh giá nhân viên")
+                || title.equals("Cấu hình hệ thống")
+                || title.equals("Nhật ký hệ thống")
+                || title.equals("Thông báo") || title.equals("Báo cáo")) {
+            page = new AdminPanel(session, title);
         } else {
             page = new ModulePanel(title);
         }
