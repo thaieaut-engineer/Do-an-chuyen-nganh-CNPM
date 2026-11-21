@@ -10,6 +10,10 @@ BEGIN
 END;
 GO
 
+IF COL_LENGTH('dbo.NhanVien', 'AnhDaiDien') IS NULL
+    ALTER TABLE dbo.NhanVien ADD AnhDaiDien NVARCHAR(500) NULL;
+GO
+
 USE QuanLyPhongKhamThuCuc;
 GO
 

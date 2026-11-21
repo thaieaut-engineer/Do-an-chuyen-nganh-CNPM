@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -59,6 +60,8 @@ final class PatientPanel extends JPanel {
     private final JLabel resultCount = new JLabel(" ");
     private final JLabel pageLabel = new JLabel("Trang 1 / 1");
     private final JLabel message = new JLabel(" ");
+    private final JPanel patientDetail = new JPanel(new BorderLayout());
+    private BenhNhan hoveredPatient;
     private final JButton clearSearchButton = new JButton("Xóa");
     private final JButton previousButton = new JButton("Trước");
     private final JButton nextButton = new JButton("Sau");
@@ -91,6 +94,7 @@ final class PatientPanel extends JPanel {
         }
         this.session = session;
         this.patientBUS = patientBUS;
+        tableModel.addColumn("__row");
         this.searchTimer = new Timer(350, event -> {
             currentPage = 0;
             loadPatients();
@@ -180,6 +184,19 @@ final class PatientPanel extends JPanel {
         table.getColumnModel().getColumn(5).setPreferredWidth(210);
         table.getColumnModel().getColumn(6).setPreferredWidth(125);
         table.getColumnModel().getColumn(6).setCellRenderer(new PatientStatusRenderer());
+        table.getColumnModel().getColumn(7).setMinWidth(0);
+        table.getColumnModel().getColumn(7).setMaxWidth(0);
+        table.getColumnModel().getColumn(7).setWidth(0);
+        table.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+            @Override public void mouseMoved(java.awt.event.MouseEvent event) {
+                int row = table.rowAtPoint(event.getPoint());
+                if (row >= 0) {
+                    table.setRowSelectionInterval(row, row);
+                    showPatientPreview((BenhNhan) tableModel.getValueAt(
+                            table.convertRowIndexToModel(row), 7));
+                }
+            }
+        });
         table.getSelectionModel().addListSelectionListener(event -> {
             if (!event.getValueIsAdjusting()) {
                 updateSelectionActions();
@@ -204,7 +221,15 @@ final class PatientPanel extends JPanel {
         scroll.setBorder(BorderFactory.createLineBorder(MainFrame.BORDER));
         scroll.getViewport().setBackground(Color.WHITE);
         scroll.setPreferredSize(new Dimension(0, 360));
-        card.add(scroll, BorderLayout.CENTER);
+        JPanel listAndDetail = new JPanel(new BorderLayout(14, 0));
+        listAndDetail.setOpaque(false);
+        listAndDetail.add(scroll, BorderLayout.CENTER);
+        patientDetail.setPreferredSize(new Dimension(330, 0));
+        patientDetail.setBackground(Color.WHITE);
+        patientDetail.setBorder(BorderFactory.createLineBorder(MainFrame.BORDER));
+        showEmptyPatientPreview();
+        listAndDetail.add(patientDetail, BorderLayout.EAST);
+        card.add(listAndDetail, BorderLayout.CENTER);
         card.add(createFooter(), BorderLayout.SOUTH);
         return card;
     }
@@ -383,10 +408,116 @@ final class PatientPanel extends JPanel {
                 patient.email() == null ? "—" : patient.email(),
                 "HoatDong".equals(patient.trangThai()) ? "Đang hoạt động" : "Tạm khóa"
             });
+            tableModel.setValueAt(patient, tableModel.getRowCount() - 1, 7);
         }
+        hoveredPatient = null;
+        showEmptyPatientPreview();
         totalPages = page.totalPages();
         pageLabel.setText("Trang " + (page.page() + 1) + " / " + totalPages);
         resultCount.setText(page.totalCount() + " bệnh nhân");
+    }
+
+    private void showEmptyPatientPreview() {
+        patientDetail.removeAll();
+        patientDetail.add(previewHeader("HỒ SƠ BỆNH NHÂN", "Chọn một dòng để xem chi tiết"), BorderLayout.NORTH);
+        JLabel hint = new JLabel("Rê chuột vào danh sách bên trái", SwingConstants.CENTER);
+        hint.setForeground(MainFrame.MUTED);
+        patientDetail.add(hint, BorderLayout.CENTER);
+        patientDetail.revalidate();
+        patientDetail.repaint();
+    }
+
+    private void showPatientPreview(BenhNhan patient) {
+        if (patient == null || patient == hoveredPatient) return;
+        hoveredPatient = patient;
+        patientDetail.removeAll();
+        JPanel body = new JPanel();
+        body.setBackground(Color.WHITE);
+        body.setBorder(new EmptyBorder(16, 18, 10, 18));
+        body.setLayout(new javax.swing.BoxLayout(body, javax.swing.BoxLayout.Y_AXIS));
+        JLabel status = new JLabel("HoatDong".equals(patient.trangThai()) ? "Đang hoạt động" : "Tạm khóa");
+        status.setOpaque(true);
+        status.setBackground("HoatDong".equals(patient.trangThai()) ? new Color(38, 157, 105) : new Color(210, 75, 83));
+        status.setForeground(Color.WHITE);
+        status.setBorder(new EmptyBorder(5, 9, 5, 9));
+        body.add(status);
+        body.add(Box.createVerticalStrut(14));
+        body.add(patientGroup("Thông tin cá nhân", new String[]{
+            "Mã bệnh nhân", safePatient(patient.maBenhNhan()), "Họ tên", safePatient(patient.hoTen()),
+            "Ngày sinh", patient.ngaySinh() == null ? "Chưa cập nhật" : patient.ngaySinh().format(DATE_FORMAT),
+            "Giới tính", safePatient(patient.gioiTinh()), "Số giấy tờ", safePatient(patient.soGiayTo())}));
+        body.add(Box.createVerticalStrut(12));
+        body.add(patientGroup("Liên hệ", new String[]{
+            "Điện thoại", safePatient(patient.soDienThoai()), "Email", safePatient(patient.email()),
+            "Địa chỉ", safePatient(patient.diaChi()), "Ngày tạo hồ sơ", safePatient(patient.ngayTaoHoSo())}));
+        JScrollPane scroll = new JScrollPane(body);
+        scroll.setBorder(null);
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        actions.setBackground(Color.WHITE);
+        actions.setBorder(new EmptyBorder(10, 16, 0, 16));
+        JButton detailAction = new JButton("Xem chi tiết");
+        UIStyle.secondaryButton(detailAction);
+        detailAction.addActionListener(event -> showSelectedPatient(PatientDialog.Mode.DETAILS));
+        actions.add(detailAction);
+        if (canEdit()) {
+            JButton editAction = new JButton("Chỉnh sửa");
+            UIStyle.secondaryButton(editAction);
+            editAction.addActionListener(event -> showSelectedPatient(PatientDialog.Mode.EDIT));
+            JButton statusAction = new JButton("Trạng thái");
+            UIStyle.secondaryButton(statusAction);
+            statusAction.addActionListener(event -> changeSelectedPatientStatus());
+            actions.add(editAction);
+            actions.add(statusAction);
+        }
+        patientDetail.add(previewHeader(patient.hoTen(), patient.maBenhNhan()), BorderLayout.NORTH);
+        patientDetail.add(scroll, BorderLayout.CENTER);
+        patientDetail.add(actions, BorderLayout.SOUTH);
+        patientDetail.revalidate();
+        patientDetail.repaint();
+    }
+
+    private JPanel previewHeader(String title, String subtitle) {
+        JPanel panel = new JPanel();
+        panel.setBackground(MainFrame.NAVY);
+        panel.setLayout(new javax.swing.BoxLayout(panel, javax.swing.BoxLayout.Y_AXIS));
+        panel.setBorder(new EmptyBorder(16, 18, 16, 18));
+        JLabel main = new JLabel(title);
+        main.setForeground(Color.WHITE);
+        main.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        JLabel sub = new JLabel(subtitle);
+        sub.setForeground(new Color(190, 215, 226));
+        panel.add(main);
+        panel.add(Box.createVerticalStrut(4));
+        panel.add(sub);
+        return panel;
+    }
+
+    private JPanel patientGroup(String title, String[] values) {
+        JPanel panel = new JPanel();
+        panel.setOpaque(false);
+        panel.setLayout(new javax.swing.BoxLayout(panel, javax.swing.BoxLayout.Y_AXIS));
+        JLabel heading = new JLabel(title);
+        heading.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        heading.setForeground(MainFrame.TEXT);
+        panel.add(heading);
+        panel.add(Box.createVerticalStrut(7));
+        for (int i = 0; i < values.length; i += 2) {
+            JPanel row = new JPanel(new BorderLayout(8, 0));
+            row.setOpaque(false);
+            JLabel key = new JLabel(values[i]);
+            key.setForeground(MainFrame.MUTED);
+            JLabel value = new JLabel("<html>" + values[i + 1] + "</html>");
+            value.setForeground(MainFrame.TEXT);
+            row.add(key, BorderLayout.WEST);
+            row.add(value, BorderLayout.CENTER);
+            panel.add(row);
+            panel.add(Box.createVerticalStrut(5));
+        }
+        return panel;
+    }
+
+    private static String safePatient(Object value) {
+        return value == null || value.toString().isBlank() ? "Chưa cập nhật" : value.toString();
     }
 
     private void handleLoadFailure(String error, Throwable cause) {

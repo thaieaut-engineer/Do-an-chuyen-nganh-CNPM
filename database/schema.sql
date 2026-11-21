@@ -44,6 +44,7 @@ CREATE TABLE NhanVien (
     TrangThaiCongTac NVARCHAR(20) DEFAULT 'DangLam' CHECK (TrangThaiCongTac IN ('ThuViec', 'DangLam', 'TamNghi', 'DaNghi')),
     MaBoPhan VARCHAR(20),
     MaChucDanh VARCHAR(20),
+    AnhDaiDien NVARCHAR(500),
     FOREIGN KEY(MaBoPhan) REFERENCES BoPhan(MaBoPhan),
     FOREIGN KEY(MaChucDanh) REFERENCES ChucDanh(MaChucDanh)
 );
