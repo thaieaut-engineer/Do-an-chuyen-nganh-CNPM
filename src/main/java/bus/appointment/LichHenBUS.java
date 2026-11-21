@@ -262,6 +262,21 @@ public final class LichHenBUS {
         }
     }
 
+    public void markNoShow(
+            AuthenticatedSession session, long appointmentId, String reason)
+            throws AppointmentException {
+        requireEdit(session);
+        if (appointmentId <= 0) {
+            throw new AppointmentException("Mã lịch hẹn không hợp lệ.");
+        }
+        try {
+            appointmentDAO.markNoShow(
+                    appointmentId, session.getEmployeeId(), normalize(reason));
+        } catch (AppointmentDAOException exception) {
+            throw toAppointmentException(exception);
+        }
+    }
+
     private AppointmentDraft validateDraft(AppointmentDraft draft)
             throws AppointmentException {
         if (draft == null) {

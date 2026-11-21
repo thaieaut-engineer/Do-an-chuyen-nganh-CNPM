@@ -553,6 +553,10 @@ public final class LichHenDAO {
         changeStatus(appointmentId, changedBy, "DaHuy", "HuyLichHen", reason);
     }
 
+    public void markNoShow(long appointmentId, String changedBy, String reason) {
+        changeStatus(appointmentId, changedBy, "VangMat", "DanhDauVangMat", reason);
+    }
+
     private void changeStatus(
             long appointmentId, String changedBy, String newStatus,
             String action, String reason) {
@@ -560,9 +564,14 @@ public final class LichHenDAO {
             beginTransaction(connection);
             try {
                 LichHen old = lockEditableAppointment(connection, appointmentId);
+                boolean noShowAllowed = "VangMat".equals(newStatus)
+                        && "DaXacNhan".equals(old.trangThai())
+                        && old.thoiGianHen() != null
+                        && !old.thoiGianHen().isAfter(LocalDateTime.now());
                 if (!"ChoXacNhan".equals(old.trangThai())
                         && !("DaHuy".equals(newStatus)
-                        && "DaXacNhan".equals(old.trangThai()))) {
+                        && "DaXacNhan".equals(old.trangThai())
+                        || noShowAllowed)) {
                     throw new AppointmentDAOException(
                             AppointmentDAOException.Reason.INVALID_STATE,
                             "Chỉ lịch chờ xác nhận hoặc đã xác nhận mới được thao tác này.",

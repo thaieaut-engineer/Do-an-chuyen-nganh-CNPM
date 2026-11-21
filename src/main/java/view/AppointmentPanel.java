@@ -79,6 +79,7 @@ final class AppointmentPanel extends JPanel {
     private final JButton editButton = new JButton("Chỉnh sửa");
     private final JButton confirmButton = new JButton("Xác nhận");
     private final JButton cancelButton = new JButton("Hủy lịch");
+    private final JButton noShowButton = new JButton("Đánh dấu vắng");
     private final DefaultTableModel tableModel = new DefaultTableModel(
             new Object[]{"Mã lịch", "Thời gian hẹn", "Bệnh nhân", "Điện thoại",
                 "Bác sĩ", "Chuyên khoa", "Trạng thái"}, 0) {
@@ -296,7 +297,8 @@ final class AppointmentPanel extends JPanel {
         editButton.addActionListener(event -> openEditor(selectedAppointmentId()));
         confirmButton.addActionListener(event -> confirmSelected());
         cancelButton.addActionListener(event -> cancelSelected());
-        for (JButton button : List.of(detailsButton, editButton, confirmButton, cancelButton)) {
+        noShowButton.addActionListener(event -> markSelectedNoShow());
+        for (JButton button : List.of(detailsButton, editButton, confirmButton, cancelButton, noShowButton)) {
             button.setEnabled(false);
             actions.add(button);
         }
@@ -643,6 +645,9 @@ final class AppointmentPanel extends JPanel {
         editButton.setEnabled(editable);
         confirmButton.setEnabled(canManage() && selected && waiting);
         cancelButton.setEnabled(editable);
+        boolean confirmedPast = canManage() && selected
+                && "Đã xác nhận".equals(selectedStatus());
+        noShowButton.setEnabled(confirmedPast);
     }
 
     private void showDetails() {
@@ -705,6 +710,46 @@ final class AppointmentPanel extends JPanel {
         }
     }
 
+    private void markSelectedNoShow() {
+        long appointmentId = selectedAppointmentId();
+        if (appointmentId <= 0 || !canManage()) {
+            return;
+        }
+        int answer = JOptionPane.showConfirmDialog(
+                this, "Đánh dấu bệnh nhân vắng mặt ở lịch hẹn " + appointmentId + "?",
+                "Xác nhận vắng mặt", JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if (answer != JOptionPane.YES_OPTION) {
+            return;
+        }
+        setActionsEnabled(false);
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws AppointmentException {
+                appointmentBUS.markNoShow(session, appointmentId, "Bệnh nhân không đến khám.");
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    message.setForeground(new Color(190, 110, 35));
+                    message.setText("Đã ghi nhận bệnh nhân vắng mặt.");
+                    UIStyle.showSuccess(AppointmentPanel.this,
+                            "Đã cập nhật trạng thái vắng mặt cho lịch hẹn.");
+                    refreshData();
+                } catch (Exception exception) {
+                    Throwable cause = exception instanceof ExecutionException
+                            ? exception.getCause() : exception;
+                    showActionError(cause == null ? "Không thể cập nhật trạng thái." : cause.getMessage(), cause);
+                } finally {
+                    updateActions();
+                }
+            }
+        }.execute();
+    }
+
     private void runStatusAction(long appointmentId, boolean confirm, String reason) {
         setActionsEnabled(false);
         message.setForeground(MainFrame.MUTED);
@@ -746,6 +791,7 @@ final class AppointmentPanel extends JPanel {
         editButton.setEnabled(enabled);
         confirmButton.setEnabled(enabled);
         cancelButton.setEnabled(enabled);
+        noShowButton.setEnabled(enabled);
     }
 
     private void showActionError(String error, Throwable cause) {
