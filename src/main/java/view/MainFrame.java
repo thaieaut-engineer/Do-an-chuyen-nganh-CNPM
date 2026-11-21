@@ -17,6 +17,8 @@ import bus.chemical.ChemicalBUS;
 import bus.fee.FeeBUS;
 import bus.schedule.ScheduleBUS;
 import bus.account.AccountBUS;
+import bus.billing.BillingBUS;
+import bus.insurance.InsuranceBUS;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -57,6 +59,8 @@ public class MainFrame extends JFrame {
     private final FeeBUS feeBUS = new FeeBUS();
     private final ScheduleBUS scheduleBUS = new ScheduleBUS();
     private final AccountBUS accountBUS = new AccountBUS();
+    private final BillingBUS billingBUS = new BillingBUS();
+    private final InsuranceBUS insuranceBUS = new InsuranceBUS();
     private final SidebarPanel sidebar;
     private final HeaderPanel header;
     private final JPanel pageHost = new JPanel(new BorderLayout());
@@ -73,6 +77,9 @@ public class MainFrame extends JFrame {
     private FeePanel feePanel;
     private SchedulePanel schedulePanel;
     private AccountPanel accountPanel;
+    private BillingPanel invoicePanel;
+    private BillingPanel paymentPanel;
+    private InsurancePanel insurancePanel;
     private boolean logoutStarted;
 
     public MainFrame(AuthenticatedSession session) {
@@ -225,6 +232,21 @@ public class MainFrame extends JFrame {
                 accountPanel.refreshData();
             }
             page = accountPanel;
+        } else if (title.equals("Hóa đơn")) {
+            if (invoicePanel == null) {
+                invoicePanel = new BillingPanel(session, billingBUS, false);
+            }
+            page = invoicePanel;
+        } else if (title.equals("Thanh toán")) {
+            if (paymentPanel == null) {
+                paymentPanel = new BillingPanel(session, billingBUS, true);
+            }
+            page = paymentPanel;
+        } else if (title.equals("Bảo hiểm y tế")) {
+            if (insurancePanel == null) {
+                insurancePanel = new InsurancePanel(session, insuranceBUS);
+            }
+            page = insurancePanel;
         } else {
             page = new ModulePanel(title);
         }
