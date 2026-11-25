@@ -20,6 +20,7 @@ import bus.account.AccountBUS;
 import bus.billing.BillingBUS;
 import bus.insurance.InsuranceBUS;
 import bus.staff.StaffBUS;
+import bus.device.DeviceBUS;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -63,6 +64,7 @@ public class MainFrame extends JFrame {
     private final BillingBUS billingBUS = new BillingBUS();
     private final InsuranceBUS insuranceBUS = new InsuranceBUS();
     private final StaffBUS staffBUS = new StaffBUS();
+    private final DeviceBUS deviceBUS = new DeviceBUS();
     private final SidebarPanel sidebar;
     private final HeaderPanel header;
     private final JPanel pageHost = new JPanel(new BorderLayout());
@@ -84,6 +86,12 @@ public class MainFrame extends JFrame {
     private InsurancePanel insurancePanel;
     private StaffPanel staffPanel;
     private StaffPanel doctorPanel;
+    private DevicePanel devicePanel;
+    private MaintenancePanel maintenanceSchedulePanel;
+    private MaintenancePanel maintenanceRepairPanel;
+    private AdminCrudPanel evaluationPanel;
+    private AdminCrudPanel configPanel;
+    private AdminCrudPanel notificationPanel;
     private boolean logoutStarted;
 
     public MainFrame(AuthenticatedSession session) {
@@ -133,7 +141,7 @@ public class MainFrame extends JFrame {
                 UIManager.put("ProgressBar.arc", 12);
                 UIManager.put("Component.focusColor", new Color(0x02B5AB));
                 UIManager.put("Component.focusedBorderColor", new Color(0x02B5AB));
-                
+
                 new view.auth.LoginFrame().setVisible(true);
             } catch (Exception e) {
                 System.err.println("Không thể khởi động giao diện: " + e.getMessage());
@@ -261,11 +269,39 @@ public class MainFrame extends JFrame {
                 doctorPanel = new StaffPanel(session, staffBUS, true);
             }
             page = doctorPanel;
-        } else if (title.equals("Phân quyền") || title.equals("Thiết bị")
-                || title.equals("Đánh giá nhân viên")
-                || title.equals("Cấu hình hệ thống")
+        } else if (title.equals("Thiết bị")) {
+            if (devicePanel == null) {
+                devicePanel = new DevicePanel(session, deviceBUS);
+            }
+            page = devicePanel;
+        } else if (title.equals("Lịch bảo dưỡng")) {
+            if (maintenanceSchedulePanel == null) {
+                maintenanceSchedulePanel = new MaintenancePanel(session, true);
+            }
+            page = maintenanceSchedulePanel;
+        } else if (title.equals("Sửa chữa thiết bị")) {
+            if (maintenanceRepairPanel == null) {
+                maintenanceRepairPanel = new MaintenancePanel(session, false);
+            }
+            page = maintenanceRepairPanel;
+        } else if (title.equals("Đánh giá nhân viên")) {
+            if (evaluationPanel == null) {
+                evaluationPanel = new AdminCrudPanel(session, title);
+            }
+            page = evaluationPanel;
+        } else if (title.equals("Cấu hình hệ thống")) {
+            if (configPanel == null) {
+                configPanel = new AdminCrudPanel(session, title);
+            }
+            page = configPanel;
+        } else if (title.equals("Thông báo")) {
+            if (notificationPanel == null) {
+                notificationPanel = new AdminCrudPanel(session, title);
+            }
+            page = notificationPanel;
+        } else if (title.equals("Phân quyền")
                 || title.equals("Nhật ký hệ thống")
-                || title.equals("Thông báo") || title.equals("Báo cáo")) {
+                || title.equals("Báo cáo")) {
             page = new AdminPanel(session, title);
         } else {
             page = new ModulePanel(title);

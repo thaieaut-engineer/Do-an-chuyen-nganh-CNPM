@@ -178,6 +178,8 @@ final class SidebarPanel extends JPanel {
                 new MenuItem("Bác sĩ", "doctor"),
                 new MenuItem("Lịch làm việc", "calendar"),
                 new MenuItem("Thiết bị", "equipment"),
+                new MenuItem("Lịch bảo dưỡng", "calendar"),
+                new MenuItem("Sửa chữa thiết bị", "wrench"),
                 new MenuItem("Đánh giá nhân viên", "star"),
                 new MenuItem("Tài khoản", "user"),
                 new MenuItem("Phân quyền", "key"),

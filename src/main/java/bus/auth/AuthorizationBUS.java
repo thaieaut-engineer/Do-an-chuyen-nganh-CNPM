@@ -24,6 +24,8 @@ public final class AuthorizationBUS {
             Map.entry("Bác sĩ", Set.of("NHANSU_XEM")),
             Map.entry("Lịch làm việc", Set.of("NHANSU_XEM")),
             Map.entry("Thiết bị", Set.of("THIETBI_QUANLY")),
+            Map.entry("Lịch bảo dưỡng", Set.of("THIETBI_QUANLY")),
+            Map.entry("Sửa chữa thiết bị", Set.of("THIETBI_QUANLY")),
             Map.entry("Đánh giá nhân viên", Set.of("NHANSU_XEM")),
             Map.entry("Tài khoản", Set.of("TAIKHOAN_QUANLY")),
             Map.entry("Phân quyền", Set.of("TAIKHOAN_QUANLY")),
