@@ -452,26 +452,8 @@ final class PatientPanel extends JPanel {
             "Địa chỉ", safePatient(patient.diaChi()), "Ngày tạo hồ sơ", safePatient(patient.ngayTaoHoSo())}));
         JScrollPane scroll = new JScrollPane(body);
         scroll.setBorder(null);
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        actions.setBackground(Color.WHITE);
-        actions.setBorder(new EmptyBorder(10, 16, 0, 16));
-        JButton detailAction = new JButton("Xem chi tiết");
-        UIStyle.secondaryButton(detailAction);
-        detailAction.addActionListener(event -> showSelectedPatient(PatientDialog.Mode.DETAILS));
-        actions.add(detailAction);
-        if (canEdit()) {
-            JButton editAction = new JButton("Chỉnh sửa");
-            UIStyle.secondaryButton(editAction);
-            editAction.addActionListener(event -> showSelectedPatient(PatientDialog.Mode.EDIT));
-            JButton statusAction = new JButton("Trạng thái");
-            UIStyle.secondaryButton(statusAction);
-            statusAction.addActionListener(event -> changeSelectedPatientStatus());
-            actions.add(editAction);
-            actions.add(statusAction);
-        }
         patientDetail.add(previewHeader(patient.hoTen(), patient.maBenhNhan()), BorderLayout.NORTH);
         patientDetail.add(scroll, BorderLayout.CENTER);
-        patientDetail.add(actions, BorderLayout.SOUTH);
         patientDetail.revalidate();
         patientDetail.repaint();
     }

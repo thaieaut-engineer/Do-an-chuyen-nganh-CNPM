@@ -47,6 +47,7 @@ final class HeaderPanel extends JPanel {
         UIStyle.field(search);
         search.putClientProperty("JTextField.placeholderText", "Tìm nhanh chức năng...");
         search.setPreferredSize(new Dimension(280, 36));
+        search.setMinimumSize(new Dimension(180, 36));
         search.addActionListener(event -> searchPage(search, pages, onNavigate));
         JButton searchButton = iconButton("search", "Tìm kiếm chức năng", 18);
         searchButton.addActionListener(event -> searchPage(search, pages, onNavigate));
@@ -70,6 +71,8 @@ final class HeaderPanel extends JPanel {
         account.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(MainFrame.BORDER),
                 new EmptyBorder(7, 10, 7, 10)));
+        account.putClientProperty("JButton.buttonType", "roundRect");
+        account.putClientProperty("FlatLaf.style", "focusWidth: 0; hoverBackground: #F1F8F8");
         account.addActionListener(event -> showAccountMenu(
                 account, session, onLogout, onChangePassword));
 
@@ -158,6 +161,8 @@ final class HeaderPanel extends JPanel {
         button.setForeground(MainFrame.MUTED);
         button.setBackground(Color.WHITE);
         button.setBorder(new EmptyBorder(5, 8, 5, 8));
+        button.setContentAreaFilled(false);
+        button.setBorderPainted(false);
         button.setFocusPainted(false);
         button.setHorizontalAlignment(SwingConstants.CENTER);
         return button;

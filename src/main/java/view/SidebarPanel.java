@@ -53,6 +53,8 @@ final class SidebarPanel extends JPanel {
         menuScroll.setBorder(null);
         menuScroll.setOpaque(false);
         menuScroll.getViewport().setOpaque(false);
+        menuScroll.getVerticalScrollBar().setOpaque(false);
+        menuScroll.getVerticalScrollBar().setPreferredSize(new Dimension(7, 0));
         menuScroll.getVerticalScrollBar().setUnitIncrement(16);
         add(menuScroll, BorderLayout.CENTER);
         add(createFooter(session), BorderLayout.SOUTH);
@@ -217,6 +219,8 @@ final class SidebarPanel extends JPanel {
                 button.setOpaque(false);
                 button.setBorder(new EmptyBorder(9, 11, 9, 8));
                 button.setFocusPainted(false);
+                button.putClientProperty("JButton.buttonType", "borderless");
+                button.putClientProperty("FlatLaf.style", "focusWidth: 0; hoverBackground: #27425F");
                 button.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
                 button.setAlignmentX(LEFT_ALIGNMENT);
                 button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));

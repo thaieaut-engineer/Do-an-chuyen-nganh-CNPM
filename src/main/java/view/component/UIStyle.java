@@ -53,6 +53,15 @@ public final class UIStyle {
         javax.swing.UIManager.put("Button.pressedBackground", new Color(0xBEEBE7));
         javax.swing.UIManager.put("TextField.placeholderForeground", new Color(0xA0ACB8));
         javax.swing.UIManager.put("Table.alternateRowColor", new Color(0xFBFCFD));
+        javax.swing.UIManager.put("TableHeader.bottomSeparatorColor", BORDER);
+        javax.swing.UIManager.put("TableHeader.separatorColor", BORDER);
+        javax.swing.UIManager.put("ScrollBar.track", new Color(0xF4F7F9));
+        javax.swing.UIManager.put("ScrollBar.thumb", new Color(0xC7D2DC));
+        javax.swing.UIManager.put("ScrollBar.hoverThumbColor", new Color(0xAEBBC7));
+        javax.swing.UIManager.put("ScrollBar.pressedThumbColor", PRIMARY);
+        javax.swing.UIManager.put("ToolTip.background", TEXT);
+        javax.swing.UIManager.put("ToolTip.foreground", Color.WHITE);
+        javax.swing.UIManager.put("ToolTip.border", BorderFactory.createEmptyBorder(6, 9, 6, 9));
         javax.swing.UIManager.put("Table.focusCellHighlightBorder", BorderFactory.createEmptyBorder());
         javax.swing.UIManager.put("OptionPane.background", SURFACE);
         javax.swing.UIManager.put("OptionPane.messageForeground", TEXT);
@@ -73,6 +82,8 @@ public final class UIStyle {
         button.setBorderPainted(false);
         button.setFocusPainted(false);
         button.setMargin(new Insets(10, 16, 10, 16));
+        button.putClientProperty("JButton.buttonType", "roundRect");
+        button.putClientProperty("FlatLaf.style", "focusWidth: 0; hoverBackground: #0AAEA5; pressedBackground: #008F88");
         button.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
     }
 
@@ -85,6 +96,8 @@ public final class UIStyle {
                 BorderFactory.createLineBorder(BORDER),
                 new EmptyBorder(8, 14, 8, 14)));
         button.setFocusPainted(false);
+        button.putClientProperty("JButton.buttonType", "roundRect");
+        button.putClientProperty("FlatLaf.style", "focusWidth: 0; hoverBackground: #F1F8F8");
         button.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
     }
 
@@ -100,6 +113,7 @@ public final class UIStyle {
         field.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER),
                 new EmptyBorder(8, 11, 8, 11)));
+        field.putClientProperty("FlatLaf.style", "focusWidth: 1; focusedBorderColor: #02B5AB");
     }
 
     public static void table(JTable table) {
@@ -111,6 +125,7 @@ public final class UIStyle {
         table.setGridColor(BORDER);
         table.setShowVerticalLines(false);
         table.setRowHeight(42);
+        table.setIntercellSpacing(new java.awt.Dimension(0, 1));
         table.setFillsViewportHeight(true);
         JTableHeader header = table.getTableHeader();
         header.setPreferredSize(new java.awt.Dimension(0, 42));

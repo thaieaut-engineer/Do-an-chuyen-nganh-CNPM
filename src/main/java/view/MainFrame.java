@@ -102,7 +102,7 @@ public class MainFrame extends JFrame {
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent event) {
-                confirmAndLogout();
+                confirmCloseProgram();
             }
         });
         setMinimumSize(new Dimension(1180, 760));
@@ -272,6 +272,8 @@ public class MainFrame extends JFrame {
         }
         JScrollPane scrollPane = new JScrollPane(page);
         scrollPane.setBorder(null);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(9, 0));
         scrollPane.getVerticalScrollBar().setUnitIncrement(18);
         scrollPane.getViewport().setBackground(PAGE);
         pageHost.removeAll();
@@ -301,6 +303,30 @@ public class MainFrame extends JFrame {
             return;
         }
 
+        logoutAndReturnToLogin();
+    }
+
+    private void confirmCloseProgram() {
+        if (logoutStarted) {
+            return;
+        }
+        int choice = JOptionPane.showOptionDialog(
+                this,
+                "Bạn muốn đăng xuất để quay lại màn hình đăng nhập hay thoát hẳn chương trình?",
+                "Đóng chương trình",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                new Object[]{"Hủy", "Đăng xuất", "Thoát chương trình"},
+                "Hủy");
+        if (choice == 1) {
+            logoutAndReturnToLogin();
+        } else if (choice == 2) {
+            exitProgram();
+        }
+    }
+
+    private void logoutAndReturnToLogin() {
         logoutStarted = true;
         String auditWarning = null;
         try {
@@ -316,6 +342,20 @@ public class MainFrame extends JFrame {
         if (auditWarning != null) {
             JOptionPane.showMessageDialog(
                     null, auditWarning, "Đăng xuất", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    private void exitProgram() {
+        logoutStarted = true;
+        try {
+            authenticationBUS.logout(session);
+        } catch (AuthenticationException exception) {
+            // Vẫn đóng ứng dụng nếu chỉ ghi nhật ký đăng xuất gặp lỗi.
+        } finally {
+            session.revoke();
+            pageHost.removeAll();
+            dispose();
+            System.exit(0);
         }
     }
 
