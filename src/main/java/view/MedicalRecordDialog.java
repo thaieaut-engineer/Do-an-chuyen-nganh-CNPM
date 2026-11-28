@@ -9,6 +9,7 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -32,6 +33,7 @@ import model.auth.AuthenticatedSession;
 import model.medicalrecord.EligibleVisit;
 import model.medicalrecord.MedicalRecordDetail;
 import model.medicalrecord.MedicalRecordDraft;
+import view.component.UIStyle;
 
 final class MedicalRecordDialog extends JDialog {
     private static final Logger LOGGER =
@@ -74,38 +76,48 @@ final class MedicalRecordDialog extends JDialog {
         this.onSaved = onSaved;
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setContentPane(createContent());
-        setMinimumSize(new Dimension(690, 650));
-        setSize(760, 760);
+        setMinimumSize(new Dimension(900, 650));
+        setSize(1040, 720);
         setLocationRelativeTo(owner);
         configureEvents();
         loadData();
     }
 
     private JPanel createContent() {
-        JPanel root = new JPanel(new BorderLayout(0, 10));
+        JPanel root = new JPanel(new BorderLayout(0, 14));
         root.setBackground(Color.WHITE);
-        root.setBorder(new EmptyBorder(18, 22, 16, 22));
+        root.setBorder(new EmptyBorder(20, 24, 18, 24));
 
-        JPanel fields = new JPanel(new GridBagLayout());
-        fields.setOpaque(false);
+        JPanel context = new JPanel(new GridBagLayout());
+        context.setOpaque(false);
         int row = 0;
         if (recordId == null) {
-            addRow(fields, row++, "Lượt khám *", visitSelector);
+            addRow(context, row++, "Lượt khám *", visitSelector);
         } else {
-            addRow(fields, row++, "Mã phiếu khám", readOnlyField(Long.toString(recordId)));
+            addRow(context, row++, "Mã phiếu khám", readOnlyField(Long.toString(recordId)));
         }
         visitInfo.setForeground(MainFrame.MUTED);
         visitInfo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        addRow(fields, row++, "Bệnh nhân / bác sĩ", visitInfo);
-        addRow(fields, row++, "Lý do khám", new JScrollPane(reasonField));
-        addRow(fields, row++, "Triệu chứng *", new JScrollPane(symptomsField));
-        addRow(fields, row++, "Dấu hiệu sinh tồn", new JScrollPane(vitalsField));
-        addRow(fields, row++, "Kết quả lâm sàng *", new JScrollPane(clinicalField));
-        addRow(fields, row++, "Chẩn đoán *", new JScrollPane(diagnosisField));
-        addRow(fields, row, "Hướng điều trị", new JScrollPane(treatmentField));
-        JScrollPane formScroll = new JScrollPane(fields);
+        addRow(context, row, "Bệnh nhân / bác sĩ", visitInfo);
+        context.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(MainFrame.BORDER),
+                new EmptyBorder(8, 12, 8, 12)));
+        root.add(context, BorderLayout.NORTH);
+
+        JPanel fields = new JPanel(new GridLayout(3, 2, 14, 14));
+        fields.setOpaque(false);
+        fields.add(fieldCard("Lý do khám", reasonField, 118));
+        fields.add(fieldCard("Triệu chứng *", symptomsField, 118));
+        fields.add(fieldCard("Dấu hiệu sinh tồn", vitalsField, 118));
+        fields.add(fieldCard("Kết quả lâm sàng *", clinicalField, 118));
+        fields.add(fieldCard("Chẩn đoán *", diagnosisField, 118));
+        fields.add(fieldCard("Hướng điều trị", treatmentField, 118));
+        JScrollPane formScroll = new JScrollPane(fields,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         formScroll.setBorder(null);
         formScroll.getVerticalScrollBar().setUnitIncrement(16);
+        formScroll.getViewport().setOpaque(false);
         root.add(formScroll, BorderLayout.CENTER);
 
         message.setForeground(MainFrame.MUTED);
@@ -116,11 +128,8 @@ final class MedicalRecordDialog extends JDialog {
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         buttons.setOpaque(false);
         cancelButton.addActionListener(event -> dispose());
-        saveButton.setForeground(Color.WHITE);
-        saveButton.setBackground(MainFrame.BLUE);
-        saveButton.setOpaque(true);
-        saveButton.setBorderPainted(false);
-        saveButton.setFocusPainted(false);
+        UIStyle.secondaryButton(cancelButton);
+        UIStyle.primaryButton(saveButton);
         saveButton.addActionListener(event -> save());
         buttons.add(cancelButton);
         buttons.add(saveButton);
@@ -130,6 +139,25 @@ final class MedicalRecordDialog extends JDialog {
         setFieldsEditable(false);
         setSaveEnabled(false);
         return root;
+    }
+
+    private JPanel fieldCard(String title, JTextArea field, int height) {
+        JPanel card = new JPanel(new BorderLayout(0, 7));
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(MainFrame.BORDER),
+                new EmptyBorder(10, 12, 10, 12)));
+        JLabel label = new JLabel(title);
+        label.setForeground(MainFrame.TEXT);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        UIStyle.textArea(field);
+        JScrollPane scroll = new JScrollPane(field);
+        scroll.setBorder(null);
+        scroll.setPreferredSize(new Dimension(0, height));
+        scroll.getVerticalScrollBar().setUnitIncrement(12);
+        card.add(label, BorderLayout.NORTH);
+        card.add(scroll, BorderLayout.CENTER);
+        return card;
     }
 
     private void configureEvents() {

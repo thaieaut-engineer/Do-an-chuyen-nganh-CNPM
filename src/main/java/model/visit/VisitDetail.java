@@ -2,6 +2,7 @@ package model.visit;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 public record VisitDetail(
         long maLuotKham,
@@ -24,5 +25,8 @@ public record VisitDetail(
         String trangThaiLichHen,
         Long maPhieuKham,
         String trangThaiPhieuKham,
-        long chiDinhDangXuLy) {
+        long chiDinhDangXuLy,
+        String soTheBHYT,
+        String trangThaiBHYT,
+        BigDecimal mucHuongBHYT) {
 }

@@ -168,6 +168,7 @@ public final class LuotKhamDAO {
                        bs.MaChuyenKhoa, ck.TenChuyenKhoa, lh.MaLichHen,
                        lh.ThoiGianHen, lh.TrangThai AS TrangThaiLichHen,
                        pk.MaPhieuKham, pk.TrangThai AS TrangThaiPhieuKham,
+                       bh.MaTheBHYT, bh.TrangThai AS TrangThaiBHYT, bh.MucHuong AS MucHuongBHYT,
                        (SELECT COUNT_BIG(*)
                         FROM dbo.ChiDinhDichVu cddv
                         WHERE cddv.MaPhieuKham = pk.MaPhieuKham
@@ -175,6 +176,12 @@ public final class LuotKhamDAO {
                            AS ChiDinhDangXuLy
                 """ + VISIT_FROM + """
                 LEFT JOIN dbo.PhieuKham pk ON pk.MaLuotKham = lv.MaLuotKham
+                OUTER APPLY (
+                    SELECT TOP (1) MaTheBHYT, TrangThai, MucHuong
+                    FROM dbo.TheBHYT
+                    WHERE MaBenhNhan = lv.MaBenhNhan
+                    ORDER BY CASE WHEN TrangThai = N'HopLe' THEN 0 ELSE 1 END, MaTheBHYT DESC
+                ) bh
                 WHERE lv.MaLuotKham = ?
                 """;
         try (Connection connection = DatabaseConnection.getConnection();
@@ -423,7 +430,10 @@ public final class LuotKhamDAO {
                 result.getString("TrangThaiLichHen"),
                 nullableLong(result, "MaPhieuKham"),
                 result.getString("TrangThaiPhieuKham"),
-                result.getLong("ChiDinhDangXuLy"));
+                result.getLong("ChiDinhDangXuLy"),
+                result.getString("MaTheBHYT"),
+                result.getString("TrangThaiBHYT"),
+                result.getBigDecimal("MucHuongBHYT"));
     }
 
     private Long nullableLong(ResultSet result, String column) throws SQLException {

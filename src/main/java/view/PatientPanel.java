@@ -104,6 +104,7 @@ final class PatientPanel extends JPanel {
         setLayout(new BorderLayout());
         setBackground(MainFrame.PAGE);
         setBorder(new EmptyBorder(25, 28, 30, 28));
+        configureListActions();
         add(createContent(), BorderLayout.NORTH);
         loadPatients();
     }
@@ -116,10 +117,22 @@ final class PatientPanel extends JPanel {
         JPanel content = new JPanel();
         content.setOpaque(false);
         content.setLayout(new javax.swing.BoxLayout(content, javax.swing.BoxLayout.Y_AXIS));
-        content.add(createHeading());
-        content.add(gap(20));
         content.add(createListCard());
         return content;
+    }
+
+    private void configureListActions() {
+        refreshButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        refreshButton.setToolTipText("Làm mới danh sách từ cơ sở dữ liệu");
+        refreshButton.addActionListener(event -> {
+            currentPage = 0;
+            loadPatients();
+        });
+        if (canEdit()) {
+            configurePrimaryButton(addButton);
+            addButton.addActionListener(event -> openPatientDialog(
+                    null, PatientDialog.Mode.CREATE));
+        }
     }
 
     private JPanel createHeading() {

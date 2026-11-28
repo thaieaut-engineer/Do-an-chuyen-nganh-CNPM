@@ -70,7 +70,7 @@ final class VisitDetailDialog extends JDialog {
             actions.add(serviceOrders);
         }
         if (onAdvance != null) {
-            JButton advance = new JButton("Chuyển trạng thái");
+            JButton advance = new JButton(nextStatusLabel(visit.trangThai()));
             view.component.UIStyle.primaryButton(advance);
             advance.addActionListener(event -> {
                 dispose();
@@ -104,6 +104,10 @@ final class VisitDetailDialog extends JDialog {
                 + "Giới tính: " + safe(visit.gioiTinhBenhNhan()) + "\n"
                 + "Số điện thoại: " + safe(visit.soDienThoaiBenhNhan()) + "\n"
                 + "Địa chỉ: " + safe(visit.diaChiBenhNhan()) + "\n\n"
+                + "BẢO HIỂM Y TẾ\n"
+                + "Số thẻ: " + safe(visit.soTheBHYT()) + "\n"
+                + "Trạng thái: " + insuranceStatus(visit.trangThaiBHYT()) + "\n"
+                + "Mức hưởng: " + insuranceRate(visit.mucHuongBHYT()) + "\n\n"
                 + "BÁC SĨ PHỤ TRÁCH\n"
                 + "Mã nhân viên: " + safe(visit.maNhanVien()) + "\n"
                 + "Họ tên: " + safe(visit.tenBacSi()) + "\n"
@@ -134,6 +138,20 @@ final class VisitDetailDialog extends JDialog {
         return value == null || value.isBlank() ? "—" : value;
     }
 
+    private String insuranceStatus(String status) {
+        return switch (status == null ? "" : status) {
+            case "HopLe" -> "Hợp lệ";
+            case "HetHan" -> "Hết hạn";
+            case "ChoXacMinh" -> "Chờ xác minh";
+            case "KhongHopLe" -> "Không hợp lệ";
+            default -> status == null || status.isBlank() ? "Chưa đăng ký" : status;
+        };
+    }
+
+    private String insuranceRate(java.math.BigDecimal rate) {
+        return rate == null ? "—" : rate.stripTrailingZeros().toPlainString() + "%";
+    }
+
     private String statusLabel(String status) {
         return switch (status == null ? "" : status) {
             case "ChoKham" -> "Chờ khám";
@@ -149,6 +167,15 @@ final class VisitDetailDialog extends JDialog {
             case "DaKy" -> "Đã ký";
             case "DaKhoa" -> "Đã khóa";
             default -> status == null || status.isBlank() ? "—" : status;
+        };
+    }
+
+    private String nextStatusLabel(String status) {
+        return switch (status == null ? "" : status) {
+            case "ChoKham" -> "Bắt đầu khám";
+            case "DangKham" -> "Chuyển chờ kết quả";
+            case "ChoKetQua" -> "Hoàn thành lượt khám";
+            default -> "Chuyển trạng thái";
         };
     }
 }

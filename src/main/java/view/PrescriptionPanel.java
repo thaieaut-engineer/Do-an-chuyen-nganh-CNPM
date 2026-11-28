@@ -49,7 +49,7 @@ import model.prescription.PrescriptionListItem;
 import model.prescription.PrescriptionPage;
 import model.prescription.PrescriptionStats;
 
-final class PrescriptionPanel extends JPanel {
+final class PrescriptionPanel extends JPanel implements FunctionStatisticsProvider {
     private static final Logger LOGGER =
             Logger.getLogger(PrescriptionPanel.class.getName());
     private static final int PAGE_SIZE = 25;
@@ -143,10 +143,6 @@ final class PrescriptionPanel extends JPanel {
         JPanel content = new JPanel();
         content.setOpaque(false);
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.add(createHeading());
-        content.add(gap(16));
-        content.add(createStatistics());
-        content.add(gap(16));
         content.add(createTabs());
         return content;
     }
@@ -170,6 +166,11 @@ final class PrescriptionPanel extends JPanel {
 
         heading.add(labels, BorderLayout.WEST);
         return heading;
+    }
+
+    @Override
+    public JPanel createStatisticsView() {
+        return createStatistics();
     }
 
     private JPanel createStatistics() {

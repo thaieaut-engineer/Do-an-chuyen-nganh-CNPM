@@ -40,7 +40,10 @@ public final class TiepNhanBUS {
             String doctorId) throws TiepNhanException {
         requireAccess(session);
         try {
-            return dao.listAppointments(false, normalize(searchText), normalize(status), date, normalize(doctorId));
+            String effectiveDoctorId = session.hasRole("VT-BACSI")
+                    ? session.getEmployeeId() : normalize(doctorId);
+            return dao.listAppointments(false, normalize(searchText), normalize(status), date,
+                    normalize(effectiveDoctorId));
         } catch (RuntimeException exception) {
             throw new TiepNhanException("Không thể tải danh sách chờ tiếp nhận.", exception);
         }
@@ -104,11 +107,22 @@ public final class TiepNhanBUS {
 
     public long receivePatient(AuthenticatedSession session, long appointmentId) throws TiepNhanException {
         requireAccess(session);
-        requirePermission(session, "BN_SUA");
+        if (!session.hasPermission("BN_SUA") && !session.hasPermission("KHAM_HOSO")) {
+            throw new TiepNhanException("Bạn không có quyền tiếp nhận bệnh nhân.");
+        }
         if (appointmentId <= 0) {
             throw new TiepNhanException("Mã lịch hẹn không hợp lệ.");
         }
         try {
+            ReceptionAppointment appointment = dao.getAppointmentDetail(appointmentId);
+            if (appointment == null) {
+                throw new TiepNhanException("Không tìm thấy lịch hẹn cần tiếp nhận.");
+            }
+            if (session.hasRole("VT-BACSI")
+                    && !session.getEmployeeId().equals(appointment.maNhanVien())) {
+                throw new TiepNhanException(
+                        "Bác sĩ chỉ được tiếp nhận bệnh nhân thuộc lịch khám của mình.");
+            }
             return dao.createVisit(appointmentId, session.getEmployeeId());
         } catch (RuntimeException exception) {
             throw new TiepNhanException(exception.getMessage() == null

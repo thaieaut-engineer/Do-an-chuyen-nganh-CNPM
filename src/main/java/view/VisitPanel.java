@@ -51,7 +51,7 @@ import model.visit.VisitStats;
 import model.serviceorder.ServiceOrderDetail;
 import model.serviceorder.ServiceOrderListItem;
 
-final class VisitPanel extends JPanel {
+final class VisitPanel extends JPanel implements FunctionStatisticsProvider {
     private static final Logger LOGGER = Logger.getLogger(VisitPanel.class.getName());
     private static final int PAGE_SIZE = 20;
     private static final DateTimeFormatter DATE_TIME =
@@ -127,10 +127,6 @@ final class VisitPanel extends JPanel {
         JPanel content = new JPanel();
         content.setOpaque(false);
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.add(createHeading());
-        content.add(gap(16));
-        content.add(createStatistics());
-        content.add(gap(16));
         content.add(createFilters());
         content.add(gap(12));
         content.add(createListCard());
@@ -155,6 +151,11 @@ final class VisitPanel extends JPanel {
 
         heading.add(labels, BorderLayout.WEST);
         return heading;
+    }
+
+    @Override
+    public JPanel createStatisticsView() {
+        return createStatistics();
     }
 
     private JPanel createStatistics() {
@@ -623,7 +624,9 @@ final class VisitPanel extends JPanel {
                     Thread.currentThread().interrupt();
                     showError("Cập nhật trạng thái bị gián đoạn.", exception);
                 } catch (ExecutionException exception) {
-                    showError("Không thể cập nhật trạng thái.", exception.getCause());
+                    Throwable cause = exception.getCause();
+                    showError(cause instanceof VisitException
+                            ? cause.getMessage() : "Không thể cập nhật trạng thái.", cause);
                 } finally {
                     if (reload) {
                         currentPage = 0;

@@ -48,7 +48,7 @@ import model.appointment.LichHen;
 import model.auth.AuthenticatedSession;
 import view.component.UIStyle;
 
-final class AppointmentPanel extends JPanel {
+final class AppointmentPanel extends JPanel implements FunctionStatisticsProvider {
     private static final Logger LOGGER =
             Logger.getLogger(AppointmentPanel.class.getName());
     private static final int PAGE_SIZE = 15;
@@ -131,10 +131,6 @@ final class AppointmentPanel extends JPanel {
         JPanel content = new JPanel();
         content.setOpaque(false);
         content.setLayout(new javax.swing.BoxLayout(content, javax.swing.BoxLayout.Y_AXIS));
-        content.add(createHeading());
-        content.add(gap(18));
-        content.add(createStatistics());
-        content.add(gap(18));
         content.add(createListCard());
         return content;
     }
@@ -157,6 +153,11 @@ final class AppointmentPanel extends JPanel {
 
         heading.add(labels, BorderLayout.WEST);
         return heading;
+    }
+
+    @Override
+    public JPanel createStatisticsView() {
+        return createStatistics();
     }
 
     private JPanel createStatistics() {

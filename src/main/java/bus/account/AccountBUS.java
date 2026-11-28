@@ -25,7 +25,7 @@ public final class AccountBUS {
         if(d==null||d.username()==null||!d.username().matches("[A-Za-z0-9._-]{4,80}")) throw new AccountException("Tên đăng nhập 4-80 ký tự, chỉ gồm chữ không dấu, số, dấu chấm, gạch ngang hoặc gạch dưới.");
         if(d.employeeId()==null||d.employeeId().isBlank()) throw new AccountException("Vui lòng chọn nhân viên gắn với tài khoản.");
         if(d.roleIds()==null||d.roleIds().isEmpty()) throw new AccountException("Vui lòng chọn ít nhất một vai trò.");
-        if(create&&(d.password()==null||d.password().length<8)) throw new AccountException("Mật khẩu phải có ít nhất 8 ký tự.");
-        if(d.password()!=null&&d.password().length>0&&d.password().length<8) throw new AccountException("Mật khẩu phải có ít nhất 8 ký tự.");
+        if(create&&(d.password()==null||d.password().length<2)) throw new AccountException("Mật khẩu phải có ít nhất 2 ký tự.");
+        if(d.password()!=null&&d.password().length>0&&d.password().length<2) throw new AccountException("Mật khẩu phải có ít nhất 2 ký tự.");
     }
 }

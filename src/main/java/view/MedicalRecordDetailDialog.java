@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.GridLayout;
 import java.awt.Window;
 import java.time.format.DateTimeFormatter;
 import javax.swing.BorderFactory;
@@ -12,6 +13,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.border.EmptyBorder;
 import model.medicalrecord.MedicalRecordDetail;
 
@@ -26,26 +28,40 @@ final class MedicalRecordDetailDialog extends JDialog {
                 ModalityType.APPLICATION_MODAL);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setContentPane(createContent(record, onEdit));
-        setMinimumSize(new Dimension(620, 620));
-        setSize(700, 720);
+        setMinimumSize(new Dimension(900, 620));
+        setSize(1040, 720);
         setLocationRelativeTo(owner);
     }
 
     private JPanel createContent(MedicalRecordDetail record, Runnable onEdit) {
-        JPanel root = new JPanel(new BorderLayout(0, 10));
+        JPanel root = new JPanel(new BorderLayout(0, 14));
         root.setBackground(Color.WHITE);
-        root.setBorder(new EmptyBorder(18, 20, 16, 20));
-        JTextArea details = new JTextArea(format(record));
-        details.setEditable(false);
-        details.setLineWrap(true);
-        details.setWrapStyleWord(true);
-        details.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        details.setForeground(MainFrame.TEXT);
-        details.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(MainFrame.BORDER),
-                new EmptyBorder(14, 14, 14, 14)));
-        JScrollPane scroll = new JScrollPane(details);
+        root.setBorder(new EmptyBorder(20, 24, 18, 24));
+
+        JPanel summary = new JPanel(new GridLayout(1, 3, 12, 0));
+        summary.setOpaque(false);
+        summary.add(infoCard("PHIẾU KHÁM", "Mã phiếu", Long.toString(record.maPhieuKham()),
+                "Trạng thái", statusLabel(record.trangThaiPhieu())));
+        summary.add(infoCard("BỆNH NHÂN", "Mã bệnh nhân", safe(record.maBenhNhan()),
+                "Họ tên", safe(record.tenBenhNhan())));
+        summary.add(infoCard("BÁC SĨ PHỤ TRÁCH", "Bác sĩ", safe(record.tenBacSi()),
+                "Chuyên khoa", safe(record.tenChuyenKhoa())));
+        root.add(summary, BorderLayout.NORTH);
+
+        JPanel content = new JPanel(new GridLayout(3, 2, 14, 14));
+        content.setOpaque(false);
+        content.add(contentCard("Lý do khám", record.lyDoKham()));
+        content.add(contentCard("Triệu chứng", record.trieuChung()));
+        content.add(contentCard("Dấu hiệu sinh tồn", record.dauHieuSinhTon()));
+        content.add(contentCard("Kết quả lâm sàng", record.ketQuaLamSang()));
+        content.add(contentCard("Chẩn đoán", record.chanDoan()));
+        content.add(contentCard("Hướng điều trị", record.huongDieuTri()));
+        JScrollPane scroll = new JScrollPane(content,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scroll.setBorder(null);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.getViewport().setOpaque(false);
         root.add(scroll, BorderLayout.CENTER);
         JPanel footer = new JPanel(new BorderLayout());
         footer.setOpaque(false);
@@ -71,6 +87,64 @@ final class MedicalRecordDetailDialog extends JDialog {
         footer.add(buttons, BorderLayout.EAST);
         root.add(footer, BorderLayout.SOUTH);
         return root;
+    }
+
+    private JPanel infoCard(String title, String labelOne, String valueOne,
+            String labelTwo, String valueTwo) {
+        JPanel card = new JPanel(new BorderLayout(0, 8));
+        card.setBackground(new Color(248, 250, 252));
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(MainFrame.BORDER),
+                new EmptyBorder(11, 13, 11, 13)));
+        JLabel heading = new JLabel(title);
+        heading.setForeground(MainFrame.BLUE);
+        heading.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        JPanel values = new JPanel(new GridLayout(2, 1, 0, 3));
+        values.setOpaque(false);
+        values.add(valueLine(labelOne, valueOne));
+        values.add(valueLine(labelTwo, valueTwo));
+        card.add(heading, BorderLayout.NORTH);
+        card.add(values, BorderLayout.CENTER);
+        return card;
+    }
+
+    private JPanel valueLine(String label, String value) {
+        JPanel line = new JPanel(new BorderLayout(8, 0));
+        line.setOpaque(false);
+        JLabel key = new JLabel(label);
+        key.setForeground(MainFrame.MUTED);
+        key.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        JLabel text = new JLabel(value);
+        text.setForeground(MainFrame.TEXT);
+        text.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        line.add(key, BorderLayout.WEST);
+        line.add(text, BorderLayout.CENTER);
+        return line;
+    }
+
+    private JPanel contentCard(String title, String value) {
+        JPanel card = new JPanel(new BorderLayout(0, 7));
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(MainFrame.BORDER),
+                new EmptyBorder(10, 12, 10, 12)));
+        JLabel heading = new JLabel(title);
+        heading.setForeground(MainFrame.TEXT);
+        heading.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        JTextArea text = new JTextArea(safe(value));
+        text.setEditable(false);
+        text.setLineWrap(true);
+        text.setWrapStyleWord(true);
+        text.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        text.setForeground(MainFrame.TEXT);
+        text.setBackground(new Color(250, 251, 253));
+        text.setBorder(new EmptyBorder(8, 9, 8, 9));
+        JScrollPane scroll = new JScrollPane(text);
+        scroll.setBorder(null);
+        scroll.setPreferredSize(new Dimension(0, 108));
+        card.add(heading, BorderLayout.NORTH);
+        card.add(scroll, BorderLayout.CENTER);
+        return card;
     }
 
     private String format(MedicalRecordDetail record) {

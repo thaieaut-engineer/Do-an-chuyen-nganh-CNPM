@@ -34,6 +34,7 @@ import java.util.logging.Logger;
 import model.auth.AuthenticatedSession;
 import view.MainFrame;
 import view.component.AppIcon;
+import view.component.UIStyle;
 
 public final class LoginFrame extends JFrame {
     private static final Logger LOGGER = Logger.getLogger(LoginFrame.class.getName());
@@ -195,12 +196,8 @@ public final class LoginFrame extends JFrame {
 
     private JButton createLoginButton() {
         JButton login = new JButton("Đăng nhập");
+        UIStyle.primaryButton(login);
         login.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        login.setForeground(Color.WHITE);
-        login.setBackground(BLUE);
-        login.setOpaque(true);
-        login.setBorderPainted(false);
-        login.setFocusPainted(false);
         login.setPreferredSize(new Dimension(0, 42));
         login.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
         login.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -288,10 +285,7 @@ public final class LoginFrame extends JFrame {
     }
 
     private void styleInput(JTextField input) {
-        input.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        input.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(215, 223, 232)),
-                new EmptyBorder(0, 12, 0, 12)));
+        UIStyle.field(input);
         input.setPreferredSize(new Dimension(0, 38));
         input.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         input.setAlignmentX(Component.LEFT_ALIGNMENT);

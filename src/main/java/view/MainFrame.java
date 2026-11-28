@@ -27,10 +27,13 @@ import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.List;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import model.auth.AuthenticatedSession;
@@ -68,6 +71,10 @@ public class MainFrame extends JFrame {
     private final SidebarPanel sidebar;
     private final HeaderPanel header;
     private final JPanel pageHost = new JPanel(new BorderLayout());
+    private final JPanel overviewHost = new JPanel(new BorderLayout());
+    private final JPanel workspaceCenter = new JPanel(new BorderLayout());
+    private final JPanel statisticsHost = new JPanel(new BorderLayout());
+    private final JTabbedPane workspaceTabs = new JTabbedPane();
     private final List<String> availablePages;
     private PatientPanel patientPanel;
     private AppointmentPanel appointmentPanel;
@@ -125,7 +132,14 @@ public class MainFrame extends JFrame {
         workspace.setBackground(PAGE);
         workspace.add(header, BorderLayout.NORTH);
         pageHost.setBackground(PAGE);
-        workspace.add(pageHost, BorderLayout.CENTER);
+        workspaceTabs.addTab("Nghiệp vụ", new JPanel());
+        statisticsHost.setBackground(PAGE);
+        workspaceTabs.addTab("Thống kê chức năng", statisticsHost);
+        workspaceTabs.setBackground(PAGE);
+        workspaceTabs.setForeground(TEXT);
+        overviewHost.setBackground(PAGE);
+        workspaceCenter.add(overviewHost, BorderLayout.CENTER);
+        workspace.add(workspaceCenter, BorderLayout.CENTER);
         root.add(workspace, BorderLayout.CENTER);
         setContentPane(root);
         showPage("Tổng quan");
@@ -162,6 +176,8 @@ public class MainFrame extends JFrame {
         }
         sidebar.setActivePage(title);
         header.setPageTitle(title);
+        workspaceTabs.setSelectedIndex(0);
+        showWorkspaceLayout("Tổng quan".equals(title));
         JPanel page;
         if (title.equals("Tổng quan")) {
             page = new DashboardPanel(session, dashboardBUS,
@@ -312,10 +328,85 @@ public class MainFrame extends JFrame {
         scrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(9, 0));
         scrollPane.getVerticalScrollBar().setUnitIncrement(18);
         scrollPane.getViewport().setBackground(PAGE);
-        pageHost.removeAll();
-        pageHost.add(scrollPane, BorderLayout.CENTER);
+        if ("Tổng quan".equals(title)) {
+            overviewHost.removeAll();
+            overviewHost.add(scrollPane, BorderLayout.CENTER);
+        } else {
+            pageHost.removeAll();
+            pageHost.add(scrollPane, BorderLayout.CENTER);
+        }
+        updateStatisticsTab(title, page);
+        showWorkspaceLayout("Tổng quan".equals(title));
         pageHost.revalidate();
         pageHost.repaint();
+    }
+
+    private void updateStatisticsTab(String title, JPanel page) {
+        statisticsHost.removeAll();
+        JPanel statistics;
+        if (page instanceof FunctionStatisticsProvider provider) {
+            statistics = provider.createStatisticsView();
+        } else if ("Tổng quan".equals(title)) {
+            statistics = new DashboardPanel(session, dashboardBUS,
+                    this::showPage, availablePages::contains);
+        } else {
+            statistics = new JPanel(new BorderLayout());
+            statistics.setBackground(PAGE);
+            javax.swing.JLabel message = new javax.swing.JLabel(
+                    "Chưa có bảng thống kê riêng cho chức năng này.",
+                    javax.swing.SwingConstants.CENTER);
+            message.setForeground(MUTED);
+            statistics.add(message, BorderLayout.CENTER);
+        }
+        JPanel statisticsPage = new JPanel();
+        statisticsPage.setLayout(new BoxLayout(statisticsPage, BoxLayout.Y_AXIS));
+        statisticsPage.setBackground(PAGE);
+        statisticsPage.setBorder(javax.swing.BorderFactory.createEmptyBorder(22, 26, 26, 26));
+        statisticsPage.add(statisticsHeading(title));
+        statisticsPage.add(Box.createVerticalStrut(16));
+        statistics.setAlignmentX(JPanel.LEFT_ALIGNMENT);
+        statistics.setMaximumSize(new Dimension(Integer.MAX_VALUE, 112));
+        statisticsPage.add(statistics);
+        statisticsPage.add(Box.createVerticalGlue());
+        JScrollPane statisticsScroll = new JScrollPane(statisticsPage);
+        statisticsScroll.setBorder(null);
+        statisticsScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        statisticsScroll.getVerticalScrollBar().setPreferredSize(new Dimension(9, 0));
+        statisticsScroll.getViewport().setBackground(PAGE);
+        statisticsHost.add(statisticsScroll, BorderLayout.CENTER);
+        workspaceTabs.setTitleAt(1, "Thống kê: " + title);
+        statisticsHost.revalidate();
+        statisticsHost.repaint();
+    }
+
+    private void showWorkspaceLayout(boolean overview) {
+        workspaceCenter.removeAll();
+        if (overview) {
+            workspaceCenter.add(overviewHost, BorderLayout.CENTER);
+        } else {
+            workspaceTabs.setComponentAt(0, pageHost);
+            workspaceCenter.add(workspaceTabs, BorderLayout.CENTER);
+        }
+        workspaceCenter.revalidate();
+        workspaceCenter.repaint();
+    }
+
+    private JPanel statisticsHeading(String title) {
+        JPanel heading = new JPanel();
+        heading.setLayout(new BoxLayout(heading, BoxLayout.Y_AXIS));
+        heading.setOpaque(false);
+        heading.setAlignmentX(JPanel.LEFT_ALIGNMENT);
+        javax.swing.JLabel label = new javax.swing.JLabel("Thống kê " + title.toLowerCase());
+        label.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 22));
+        label.setForeground(TEXT);
+        javax.swing.JLabel description = new javax.swing.JLabel(
+                "Theo dõi các chỉ số tổng hợp của chức năng đang chọn.");
+        description.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 13));
+        description.setForeground(MUTED);
+        heading.add(label);
+        heading.add(Box.createVerticalStrut(5));
+        heading.add(description);
+        return heading;
     }
 
     private void openChangePasswordDialog() {

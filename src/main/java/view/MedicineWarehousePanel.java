@@ -57,7 +57,7 @@ import model.warehouse.WarehouseModels.ReceiptFilter;
 import model.warehouse.WarehouseModels.Stats;
 import model.warehouse.WarehouseModels.StockMovement;
 
-final class MedicineWarehousePanel extends JPanel {
+final class MedicineWarehousePanel extends JPanel implements FunctionStatisticsProvider {
     private static final Logger LOGGER =
             Logger.getLogger(MedicineWarehousePanel.class.getName());
     private static final int PAGE_SIZE = 25;
@@ -192,10 +192,6 @@ final class MedicineWarehousePanel extends JPanel {
         JPanel content = new JPanel();
         content.setOpaque(false);
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.add(createHeading());
-        content.add(Box.createVerticalStrut(16));
-        content.add(createStatistics());
-        content.add(Box.createVerticalStrut(12));
         content.add(createStatusMessage());
         content.add(Box.createVerticalStrut(8));
         content.add(createTabs());
@@ -226,6 +222,11 @@ final class MedicineWarehousePanel extends JPanel {
         heading.add(labels, BorderLayout.WEST);
         heading.add(actions, BorderLayout.EAST);
         return heading;
+    }
+
+    @Override
+    public JPanel createStatisticsView() {
+        return createStatistics();
     }
 
     private JPanel createStatistics() {

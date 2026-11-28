@@ -48,6 +48,10 @@ final class AppointmentDetailDialog extends JDialog {
         }
     };
     private final JLabel message = new JLabel("Đang tải chi tiết lịch hẹn...");
+    private JButton editButton;
+    private JButton confirmButton;
+    private JButton cancelButton;
+    private JButton noShowButton;
 
     AppointmentDetailDialog(
             Frame owner, AuthenticatedSession session,
@@ -100,30 +104,31 @@ final class AppointmentDetailDialog extends JDialog {
         root.add(center, BorderLayout.CENTER);
         JPanel footer = new JPanel(new BorderLayout());
         footer.setOpaque(false);
-        JButton edit = new JButton("Chỉnh sửa");
-        JButton confirm = new JButton("Xác nhận");
-        JButton cancel = new JButton("Hủy lịch");
-        JButton noShow = new JButton("Đánh dấu vắng");
+        editButton = new JButton("Chỉnh sửa");
+        confirmButton = new JButton("Xác nhận");
+        cancelButton = new JButton("Hủy lịch");
+        noShowButton = new JButton("Đánh dấu vắng");
         JButton close = new JButton("Đóng");
-        view.component.UIStyle.secondaryButton(edit);
-        view.component.UIStyle.primaryButton(confirm);
-        view.component.UIStyle.dangerButton(cancel);
-        view.component.UIStyle.secondaryButton(noShow);
+        view.component.UIStyle.secondaryButton(editButton);
+        view.component.UIStyle.primaryButton(confirmButton);
+        view.component.UIStyle.dangerButton(cancelButton);
+        view.component.UIStyle.secondaryButton(noShowButton);
         view.component.UIStyle.secondaryButton(close);
-        boolean canManage = session.hasPermission("LH_QUANLY");
-        edit.setVisible(canManage);
-        confirm.setVisible(canManage); cancel.setVisible(canManage); noShow.setVisible(canManage);
-        edit.addActionListener(event -> {
+        editButton.setVisible(false);
+        confirmButton.setVisible(false);
+        cancelButton.setVisible(false);
+        noShowButton.setVisible(false);
+        editButton.addActionListener(event -> {
             dispose();
             new AppointmentDialog((Frame) getOwner(), session, appointmentBUS, patientBUS, appointmentId, ignored -> { }).setVisible(true);
         });
-        confirm.addActionListener(event -> runAction("confirm"));
-        cancel.addActionListener(event -> runAction("cancel"));
-        noShow.addActionListener(event -> runAction("noShow"));
+        confirmButton.addActionListener(event -> runAction("confirm"));
+        cancelButton.addActionListener(event -> runAction("cancel"));
+        noShowButton.addActionListener(event -> runAction("noShow"));
         close.addActionListener(event -> dispose());
         JPanel buttons = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 7, 0));
         buttons.setOpaque(false);
-        buttons.add(edit); buttons.add(confirm); buttons.add(cancel); buttons.add(noShow);
+        buttons.add(editButton); buttons.add(confirmButton); buttons.add(cancelButton); buttons.add(noShowButton);
         buttons.add(close);
         footer.add(buttons, BorderLayout.EAST);
         root.add(footer, BorderLayout.SOUTH);
@@ -160,6 +165,13 @@ final class AppointmentDetailDialog extends JDialog {
     }
 
     private void populateDetails(LichHen appointment) {
+        boolean canManage = canManageAppointment(appointment.maNhanVien());
+        boolean waiting = "ChoXacNhan".equals(appointment.trangThai());
+        boolean confirmed = "DaXacNhan".equals(appointment.trangThai());
+        editButton.setVisible(canManage && (waiting || confirmed));
+        confirmButton.setVisible(canManage && waiting);
+        cancelButton.setVisible(canManage && (waiting || confirmed));
+        noShowButton.setVisible(canManage && confirmed);
         addValue("Mã lịch hẹn", Long.toString(appointment.maLichHen()));
         addValue("Trạng thái", statusLabel(appointment.trangThai()));
         addValue("Ngày giờ", appointment.thoiGianHen() == null
@@ -228,6 +240,14 @@ final class AppointmentDetailDialog extends JDialog {
         } catch (AppointmentException | RuntimeException exception) {
             showFailure(exception.getMessage(), exception);
         }
+    }
+
+    private boolean canManageAppointment(String doctorId) {
+        if (!session.hasPermission("LH_QUANLY")) {
+            return false;
+        }
+        return !session.hasRole("VT-BACSI")
+                || session.getEmployeeId().equals(doctorId);
     }
 
     private String statusLabel(String status) {

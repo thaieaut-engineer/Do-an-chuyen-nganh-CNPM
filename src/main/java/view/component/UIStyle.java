@@ -6,6 +6,10 @@ import java.awt.Font;
 import java.awt.Insets;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JPasswordField;
+import javax.swing.JSpinner;
+import javax.swing.JTextArea;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
@@ -29,6 +33,7 @@ public final class UIStyle {
     public static final Color MUTED = new Color(0x778495);
     public static final Font BODY_FONT = new Font("Segoe UI", Font.PLAIN, 13);
     public static final Font LABEL_FONT = new Font("Segoe UI", Font.BOLD, 12);
+    public static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 20);
 
     private UIStyle() {
     }
@@ -38,7 +43,10 @@ public final class UIStyle {
         javax.swing.UIManager.put("Label.font", BODY_FONT);
         javax.swing.UIManager.put("Button.font", LABEL_FONT);
         javax.swing.UIManager.put("TextField.font", BODY_FONT);
+        javax.swing.UIManager.put("PasswordField.font", BODY_FONT);
+        javax.swing.UIManager.put("TextArea.font", BODY_FONT);
         javax.swing.UIManager.put("ComboBox.font", BODY_FONT);
+        javax.swing.UIManager.put("Spinner.font", BODY_FONT);
         javax.swing.UIManager.put("Table.font", BODY_FONT);
         javax.swing.UIManager.put("TableHeader.font", LABEL_FONT);
         javax.swing.UIManager.put("Table.rowHeight", 40);
@@ -47,6 +55,10 @@ public final class UIStyle {
         javax.swing.UIManager.put("Component.arc", 10);
         javax.swing.UIManager.put("Button.arc", 10);
         javax.swing.UIManager.put("TextComponent.arc", 8);
+        javax.swing.UIManager.put("TextField.margin", new Insets(8, 11, 8, 11));
+        javax.swing.UIManager.put("PasswordField.margin", new Insets(8, 11, 8, 11));
+        javax.swing.UIManager.put("ComboBox.padding", new Insets(6, 10, 6, 10));
+        javax.swing.UIManager.put("Spinner.padding", new Insets(6, 10, 6, 10));
         javax.swing.UIManager.put("Component.focusColor", PRIMARY);
         javax.swing.UIManager.put("Component.focusedBorderColor", PRIMARY);
         javax.swing.UIManager.put("Button.hoverBackground", new Color(0xDDF5F2));
@@ -72,6 +84,11 @@ public final class UIStyle {
         javax.swing.UIManager.put("Panel.background", SURFACE);
         javax.swing.UIManager.put("TabbedPane.selectedBackground", SURFACE);
         javax.swing.UIManager.put("TabbedPane.underlineColor", PRIMARY);
+        javax.swing.UIManager.put("TabbedPane.showTabSeparators", false);
+        javax.swing.UIManager.put("TabbedPane.tabHeight", 38);
+        javax.swing.UIManager.put("TabbedPane.tabInsets", new Insets(0, 16, 0, 16));
+        javax.swing.UIManager.put("TitlePane.unifiedBackground", SURFACE);
+        javax.swing.UIManager.put("TitlePane.centerTitle", false);
     }
 
     public static void primaryButton(JButton button) {
@@ -114,6 +131,40 @@ public final class UIStyle {
                 BorderFactory.createLineBorder(BORDER),
                 new EmptyBorder(8, 11, 8, 11)));
         field.putClientProperty("FlatLaf.style", "focusWidth: 1; focusedBorderColor: #02B5AB");
+    }
+
+    public static void passwordField(JPasswordField field) {
+        field.setFont(BODY_FONT);
+        field.setForeground(TEXT);
+        field.setBackground(SURFACE);
+        field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER),
+                new EmptyBorder(8, 11, 8, 11)));
+        field.putClientProperty("FlatLaf.style", "focusWidth: 1; focusedBorderColor: #02B5AB");
+    }
+
+    public static void textArea(JTextArea area) {
+        area.setFont(BODY_FONT);
+        area.setForeground(TEXT);
+        area.setBackground(SURFACE);
+        area.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER),
+                new EmptyBorder(9, 11, 9, 11)));
+        area.putClientProperty("FlatLaf.style", "focusWidth: 1; focusedBorderColor: #02B5AB");
+    }
+
+    public static void comboBox(JComboBox<?> comboBox) {
+        comboBox.setFont(BODY_FONT);
+        comboBox.setForeground(TEXT);
+        comboBox.setBackground(SURFACE);
+        comboBox.putClientProperty("FlatLaf.style", "focusWidth: 1; focusedBorderColor: #02B5AB");
+    }
+
+    public static void spinner(JSpinner spinner) {
+        spinner.setFont(BODY_FONT);
+        spinner.setForeground(TEXT);
+        spinner.setBackground(SURFACE);
+        spinner.putClientProperty("FlatLaf.style", "focusWidth: 1; focusedBorderColor: #02B5AB");
     }
 
     public static void table(JTable table) {
@@ -165,8 +216,9 @@ public final class UIStyle {
         scroll.setBorder(BorderFactory.createEmptyBorder());
         scroll.setPreferredSize(size);
         scroll.getVerticalScrollBar().setUnitIncrement(14);
-        return JOptionPane.showConfirmDialog(parent, scroll, title,
+        int result = JOptionPane.showConfirmDialog(parent, scroll, title,
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        return result;
     }
 
     public static String friendlyError(Throwable error, String fallback) {

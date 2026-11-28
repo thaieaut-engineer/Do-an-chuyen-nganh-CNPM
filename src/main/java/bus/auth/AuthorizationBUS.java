@@ -8,7 +8,7 @@ public final class AuthorizationBUS {
     private static final Map<String, Set<String>> PAGE_PERMISSIONS = Map.ofEntries(
             Map.entry("Bệnh nhân", Set.of("BN_XEM")),
             Map.entry("Lịch hẹn", Set.of("LH_QUANLY")),
-            Map.entry("Tiếp nhận bệnh nhân", Set.of("BN_SUA")),
+            Map.entry("Tiếp nhận bệnh nhân", Set.of("BN_SUA", "KHAM_HOSO")),
             Map.entry("Lượt khám", Set.of("KHAM_HOSO", "LH_QUANLY")),
             Map.entry("Phiếu khám", Set.of("KHAM_HOSO")),
             Map.entry("Chỉ định dịch vụ", Set.of("KHAM_CHIDINH")),

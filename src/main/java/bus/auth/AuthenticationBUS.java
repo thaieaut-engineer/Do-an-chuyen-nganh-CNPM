@@ -145,10 +145,10 @@ public final class AuthenticationBUS {
                     AuthenticationException.Reason.PASSWORD_CONFIRMATION_MISMATCH,
                     "Mật khẩu mới và xác nhận mật khẩu không trùng khớp.");
         }
-        if (newPassword.length < 8) {
+        if (newPassword.length < 2) {
             throw new AuthenticationException(
                     AuthenticationException.Reason.PASSWORD_POLICY_VIOLATION,
-                    "Mật khẩu mới phải có ít nhất 8 ký tự.");
+                    "Mật khẩu mới phải có ít nhất 2 ký tự.");
         }
 
         try {

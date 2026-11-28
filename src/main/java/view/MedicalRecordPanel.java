@@ -48,7 +48,7 @@ import model.medicalrecord.MedicalRecordListItem;
 import model.medicalrecord.MedicalRecordPage;
 import model.medicalrecord.MedicalRecordStats;
 
-final class MedicalRecordPanel extends JPanel {
+final class MedicalRecordPanel extends JPanel implements FunctionStatisticsProvider {
     private static final Logger LOGGER =
             Logger.getLogger(MedicalRecordPanel.class.getName());
     private static final int PAGE_SIZE = 20;
@@ -122,10 +122,6 @@ final class MedicalRecordPanel extends JPanel {
         JPanel content = new JPanel();
         content.setOpaque(false);
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.add(createHeading());
-        content.add(gap(16));
-        content.add(createStatistics());
-        content.add(gap(16));
         content.add(createFilters());
         content.add(gap(12));
         content.add(createListCard());
@@ -150,6 +146,11 @@ final class MedicalRecordPanel extends JPanel {
 
         heading.add(labels, BorderLayout.WEST);
         return heading;
+    }
+
+    @Override
+    public JPanel createStatisticsView() {
+        return createStatistics();
     }
 
     private JPanel createStatistics() {

@@ -40,8 +40,8 @@ final class SidebarPanel extends JPanel {
     SidebarPanel(AuthenticatedSession session, Consumer<String> onNavigate) {
         super(new BorderLayout());
         setBackground(MainFrame.NAVY);
-        setPreferredSize(new Dimension(248, 0));
-        setBorder(new EmptyBorder(18, 12, 14, 12));
+        setPreferredSize(new Dimension(210, 0));
+        setBorder(new EmptyBorder(14, 9, 10, 9));
 
         JPanel brand = createBrand();
         add(brand, BorderLayout.NORTH);
@@ -69,6 +69,12 @@ final class SidebarPanel extends JPanel {
         if (section != null) {
             setSectionExpanded(section, true);
         }
+        sectionToggles.forEach((name, toggle) -> {
+            boolean activeSection = name.equals(section);
+            toggle.setOpaque(activeSection);
+            toggle.setBackground(activeSection ? ACTIVE : MainFrame.NAVY);
+            toggle.setForeground(activeSection ? Color.WHITE : MUTED_NAV);
+        });
         buttons.forEach((name, button) -> {
             boolean active = name.equals(selected);
             button.setOpaque(active);
@@ -82,7 +88,7 @@ final class SidebarPanel extends JPanel {
 
     void toggleCollapsed() {
         collapsed = !collapsed;
-        setPreferredSize(new Dimension(collapsed ? 82 : 248, 0));
+        setPreferredSize(new Dimension(collapsed ? 72 : 210, 0));
         buttons.forEach((name, button) -> {
             button.setText(collapsed ? "" : name);
             button.setHorizontalAlignment(collapsed ? SwingConstants.CENTER : SwingConstants.LEFT);

@@ -27,6 +27,7 @@ import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 import model.auth.AuthenticatedSession;
 import model.patient.BenhNhan;
+import view.component.UIStyle;
 
 final class PatientDialog extends JDialog {
     enum Mode {
@@ -126,8 +127,10 @@ final class PatientDialog extends JDialog {
         for (JTextField field : new JTextField[]{
             nameField, birthDateField, documentField, phoneField, emailField, addressField
         }) {
+            UIStyle.field(field);
             field.setEnabled(!readOnly);
         }
+        UIStyle.comboBox(genderField);
         genderField.setEnabled(!readOnly);
 
         message.setForeground(new Color(190, 62, 62));
@@ -139,15 +142,12 @@ final class PatientDialog extends JDialog {
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         buttons.setOpaque(false);
         JButton cancelButton = new JButton(readOnly ? "Đóng" : "Hủy");
+        UIStyle.secondaryButton(cancelButton);
         cancelButton.addActionListener(event -> cancel());
         buttons.add(cancelButton);
         if (!readOnly) {
             saveButton.setText(mode == Mode.CREATE ? "Thêm bệnh nhân" : "Lưu thay đổi");
-            saveButton.setForeground(Color.WHITE);
-            saveButton.setBackground(MainFrame.BLUE);
-            saveButton.setOpaque(true);
-            saveButton.setBorderPainted(false);
-            saveButton.setFocusPainted(false);
+            UIStyle.primaryButton(saveButton);
             saveButton.addActionListener(event -> save());
             buttons.add(saveButton);
         }

@@ -4,6 +4,7 @@ import model.auth.AuthenticatedSession;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.util.List;
@@ -26,11 +27,11 @@ final class HeaderPanel extends JPanel {
     HeaderPanel(AuthenticatedSession session, List<String> pages,
             Consumer<String> onNavigate, Runnable onLogout,
             Runnable onChangePassword, Runnable onToggleSidebar) {
-        super(new BorderLayout(18, 0));
+        super(new BorderLayout(0, 8));
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 0, 1, 0, MainFrame.BORDER),
-                new EmptyBorder(13, 22, 13, 22)));
+                new EmptyBorder(10, 22, 8, 22)));
         setPreferredSize(new Dimension(0, 72));
 
         JButton sidebarToggle = iconButton("menu", "Thu gọn / mở rộng thanh điều hướng", 18);
@@ -87,8 +88,12 @@ final class HeaderPanel extends JPanel {
         actions.add(searchGroup, BorderLayout.WEST);
         actions.add(right, BorderLayout.EAST);
 
-        add(titleArea, BorderLayout.WEST);
-        add(actions, BorderLayout.EAST);
+        JPanel topRow = new JPanel(new BorderLayout(18, 0));
+        topRow.setOpaque(false);
+        topRow.add(titleArea, BorderLayout.WEST);
+        topRow.add(actions, BorderLayout.EAST);
+
+        add(topRow, BorderLayout.CENTER);
     }
 
     void setPageTitle(String title) {

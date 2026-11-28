@@ -218,7 +218,7 @@ public final class LichHenBUS {
     public void update(
             AuthenticatedSession session, long appointmentId, AppointmentDraft draft)
             throws AppointmentException {
-        requireEdit(session);
+        requireAppointmentOperator(session, appointmentId);
         if (appointmentId <= 0) {
             throw new AppointmentException("Mã lịch hẹn không hợp lệ.");
         }
@@ -232,7 +232,7 @@ public final class LichHenBUS {
 
     public void confirm(AuthenticatedSession session, long appointmentId)
             throws AppointmentException {
-        requireEdit(session);
+        requireAppointmentOperator(session, appointmentId);
         if (appointmentId <= 0) {
             throw new AppointmentException("Mã lịch hẹn không hợp lệ.");
         }
@@ -246,7 +246,7 @@ public final class LichHenBUS {
     public void cancel(
             AuthenticatedSession session, long appointmentId, String reason)
             throws AppointmentException {
-        requireEdit(session);
+        requireAppointmentOperator(session, appointmentId);
         if (appointmentId <= 0) {
             throw new AppointmentException("Mã lịch hẹn không hợp lệ.");
         }
@@ -265,7 +265,7 @@ public final class LichHenBUS {
     public void markNoShow(
             AuthenticatedSession session, long appointmentId, String reason)
             throws AppointmentException {
-        requireEdit(session);
+        requireAppointmentOperator(session, appointmentId);
         if (appointmentId <= 0) {
             throw new AppointmentException("Mã lịch hẹn không hợp lệ.");
         }
@@ -320,6 +320,30 @@ public final class LichHenBUS {
         if (session.getEmployeeId() == null || session.getEmployeeId().isBlank()) {
             throw new AppointmentException(
                     "Phiên đăng nhập không liên kết với nhân viên để thực hiện thao tác.");
+        }
+    }
+
+    private void requireAppointmentOperator(
+            AuthenticatedSession session, long appointmentId)
+            throws AppointmentException {
+        requireEdit(session);
+        if (!session.hasRole("VT-BACSI")) {
+            return;
+        }
+        if (appointmentId <= 0) {
+            throw new AppointmentException("Mã lịch hẹn không hợp lệ.");
+        }
+        try {
+            LichHen appointment = appointmentDAO.findById(appointmentId);
+            if (appointment == null) {
+                throw new AppointmentException("Không tìm thấy lịch hẹn.");
+            }
+            if (!session.getEmployeeId().equals(appointment.maNhanVien())) {
+                throw new AppointmentException(
+                        "Bác sĩ chỉ được cập nhật lịch hẹn thuộc lịch làm việc của mình.");
+            }
+        } catch (AppointmentDAOException exception) {
+            throw toAppointmentException(exception);
         }
     }
 

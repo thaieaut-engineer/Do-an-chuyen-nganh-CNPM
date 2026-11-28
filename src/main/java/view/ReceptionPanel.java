@@ -98,10 +98,6 @@ final class ReceptionPanel extends JPanel {
         JPanel content = new JPanel();
         content.setOpaque(false);
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.add(createHeading());
-        content.add(Box.createVerticalStrut(16));
-        content.add(createStats());
-        content.add(Box.createVerticalStrut(16));
         content.add(createFilters());
         content.add(Box.createVerticalStrut(16));
         content.add(createPendingSection());
