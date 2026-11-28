@@ -76,8 +76,8 @@ final class MedicalRecordDialog extends JDialog {
         this.onSaved = onSaved;
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setContentPane(createContent());
-        setMinimumSize(new Dimension(900, 650));
-        setSize(1040, 720);
+        setMinimumSize(new Dimension(800, 560));
+        setSize(900, 620);
         setLocationRelativeTo(owner);
         configureEvents();
         loadData();

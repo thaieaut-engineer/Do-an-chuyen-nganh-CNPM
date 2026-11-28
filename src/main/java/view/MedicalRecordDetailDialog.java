@@ -28,8 +28,8 @@ final class MedicalRecordDetailDialog extends JDialog {
                 ModalityType.APPLICATION_MODAL);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setContentPane(createContent(record, onEdit));
-        setMinimumSize(new Dimension(900, 620));
-        setSize(1040, 720);
+        setMinimumSize(new Dimension(800, 560));
+        setSize(900, 620);
         setLocationRelativeTo(owner);
     }
 
