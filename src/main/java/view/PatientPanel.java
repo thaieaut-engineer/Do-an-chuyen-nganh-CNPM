@@ -153,7 +153,6 @@ final class PatientPanel extends JPanel {
             actions.add(addButton);
         }
         heading.add(labels, BorderLayout.WEST);
-        heading.add(actions, BorderLayout.EAST);
         return heading;
     }
 
@@ -257,16 +256,9 @@ final class PatientPanel extends JPanel {
 
         JPanel rowActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         rowActions.setOpaque(false);
-        detailsButton.addActionListener(event -> showSelectedPatient(PatientDialog.Mode.DETAILS));
-        detailsButton.setEnabled(false);
-        rowActions.add(detailsButton);
+        rowActions.add(refreshButton);
         if (canEdit()) {
-            editButton.addActionListener(event -> showSelectedPatient(PatientDialog.Mode.EDIT));
-            statusButton.addActionListener(event -> changeSelectedPatientStatus());
-            editButton.setEnabled(false);
-            statusButton.setEnabled(false);
-            rowActions.add(editButton);
-            rowActions.add(statusButton);
+            rowActions.add(addButton);
         }
         toolbar.add(filters, BorderLayout.CENTER);
         toolbar.add(rowActions, BorderLayout.EAST);

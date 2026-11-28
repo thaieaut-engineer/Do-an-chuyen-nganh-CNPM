@@ -12,6 +12,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JButton;
+import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import model.visit.VisitDetail;
 
@@ -21,16 +23,18 @@ final class VisitDetailDialog extends JDialog {
     private static final DateTimeFormatter DATE_TIME =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-    VisitDetailDialog(Window owner, VisitDetail visit, boolean canViewMedicalRecord) {
+    VisitDetailDialog(Window owner, VisitDetail visit, boolean canViewMedicalRecord,
+            Runnable onShowServiceOrders, Runnable onAdvance) {
         super(owner, "Chi tiết lượt khám " + visit.maLuotKham(), ModalityType.APPLICATION_MODAL);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setContentPane(createContent(visit, canViewMedicalRecord));
+        setContentPane(createContent(visit, canViewMedicalRecord, onShowServiceOrders, onAdvance));
         setMinimumSize(new Dimension(560, 520));
         setSize(600, 580);
         setLocationRelativeTo(owner);
     }
 
-    private JPanel createContent(VisitDetail visit, boolean canViewMedicalRecord) {
+    private JPanel createContent(VisitDetail visit, boolean canViewMedicalRecord,
+            Runnable onShowServiceOrders, Runnable onAdvance) {
         JPanel root = new JPanel(new BorderLayout(0, 12));
         root.setBackground(Color.WHITE);
         root.setBorder(new EmptyBorder(18, 20, 16, 20));
@@ -51,6 +55,38 @@ final class VisitDetailDialog extends JDialog {
         JScrollPane scroll = new JScrollPane(details);
         scroll.setBorder(null);
         root.add(scroll, BorderLayout.CENTER);
+        JPanel footer = new JPanel(new BorderLayout());
+        footer.setOpaque(false);
+        footer.setBorder(new EmptyBorder(4, 0, 0, 0));
+        JPanel actions = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 0));
+        actions.setOpaque(false);
+        if (onShowServiceOrders != null) {
+            JButton serviceOrders = new JButton("Xem chỉ định");
+            view.component.UIStyle.secondaryButton(serviceOrders);
+            serviceOrders.addActionListener(event -> {
+                dispose();
+                onShowServiceOrders.run();
+            });
+            actions.add(serviceOrders);
+        }
+        if (onAdvance != null) {
+            JButton advance = new JButton("Chuyển trạng thái");
+            view.component.UIStyle.primaryButton(advance);
+            advance.addActionListener(event -> {
+                dispose();
+                onAdvance.run();
+            });
+            actions.add(advance);
+        }
+        JButton close = new JButton("Đóng");
+        view.component.UIStyle.secondaryButton(close);
+        close.addActionListener(event -> dispose());
+        JPanel buttons = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 0, 0));
+        buttons.setOpaque(false);
+        buttons.add(close);
+        footer.add(actions, BorderLayout.WEST);
+        footer.add(buttons, BorderLayout.EAST);
+        root.add(footer, BorderLayout.SOUTH);
         return root;
     }
 

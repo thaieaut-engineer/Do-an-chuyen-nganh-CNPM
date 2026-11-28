@@ -153,12 +153,7 @@ final class VisitPanel extends JPanel {
         labels.add(gap(5));
         labels.add(subtitle);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        actions.setOpaque(false);
-        refreshButton.addActionListener(event -> refreshData());
-        actions.add(refreshButton);
         heading.add(labels, BorderLayout.WEST);
-        heading.add(actions, BorderLayout.EAST);
         return heading;
     }
 
@@ -253,21 +248,8 @@ final class VisitPanel extends JPanel {
         titleBar.add(title, BorderLayout.WEST);
         JPanel rowActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         rowActions.setOpaque(false);
-        detailButton.addActionListener(event -> showSelectedDetail());
-        rowActions.add(detailButton);
-        if (session.hasPermission("KHAM_CHIDINH")) {
-            serviceOrdersButton.addActionListener(event -> showSelectedServiceOrders());
-            rowActions.add(serviceOrdersButton);
-        }
-        if (session.hasPermission("KHAM_HOSO")) {
-            advanceButton.setForeground(Color.WHITE);
-            advanceButton.setBackground(MainFrame.BLUE);
-            advanceButton.setOpaque(true);
-            advanceButton.setBorderPainted(false);
-            advanceButton.setFocusPainted(false);
-            advanceButton.addActionListener(event -> advanceSelected());
-            rowActions.add(advanceButton);
-        }
+        refreshButton.addActionListener(event -> refreshData());
+        rowActions.add(refreshButton);
         titleBar.add(rowActions, BorderLayout.EAST);
         card.add(titleBar, BorderLayout.NORTH);
 
@@ -571,10 +553,18 @@ final class VisitPanel extends JPanel {
             protected void done() {
                 try {
                     VisitDetail detail = get();
+                    boolean canAdvance = session.hasPermission("KHAM_HOSO")
+                            && visitBUS.canUpdateVisit(session, selected.maNhanVien())
+                            && switch (selected.trangThai()) {
+                                case "ChoKham", "DangKham", "ChoKetQua" -> true;
+                                default -> false;
+                            };
                     new VisitDetailDialog(
                             javax.swing.SwingUtilities.getWindowAncestor(VisitPanel.this),
                             detail,
-                            session.hasPermission("KHAM_HOSO")).setVisible(true);
+                            session.hasPermission("KHAM_HOSO"),
+                            session.hasPermission("KHAM_CHIDINH") ? VisitPanel.this::showSelectedServiceOrders : null,
+                            canAdvance ? VisitPanel.this::advanceSelected : null).setVisible(true);
                     setMessage(" ", MainFrame.MUTED);
                 } catch (InterruptedException exception) {
                     Thread.currentThread().interrupt();
@@ -695,7 +685,7 @@ final class VisitPanel extends JPanel {
                 try {
                     new ServiceOrderDetailDialog(
                             javax.swing.SwingUtilities.getWindowAncestor(VisitPanel.this),
-                            get()).setVisible(true);
+                            get(), null, null).setVisible(true);
                 } catch (InterruptedException exception) {
                     Thread.currentThread().interrupt();
                     showError("Tải chi tiết chỉ định bị gián đoạn.", exception);

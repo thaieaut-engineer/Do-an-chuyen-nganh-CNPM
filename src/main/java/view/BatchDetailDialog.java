@@ -8,6 +8,7 @@ import java.awt.GridLayout;
 import java.awt.Window;
 import java.time.format.DateTimeFormatter;
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -93,7 +94,14 @@ final class BatchDetailDialog extends JDialog {
         reconciliation.setForeground(detail.reconciled()
                 ? new Color(0x167647) : new Color(0xB42318));
         reconciliation.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        root.add(reconciliation, BorderLayout.SOUTH);
+        JPanel footer = new JPanel(new BorderLayout(10, 0));
+        footer.setOpaque(false);
+        footer.add(reconciliation, BorderLayout.CENTER);
+        JButton close = new JButton("Đóng");
+        view.component.UIStyle.secondaryButton(close);
+        close.addActionListener(event -> dispose());
+        footer.add(close, BorderLayout.EAST);
+        root.add(footer, BorderLayout.SOUTH);
         return root;
     }
 

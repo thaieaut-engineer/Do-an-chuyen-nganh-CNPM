@@ -168,19 +168,7 @@ final class ServiceOrderPanel extends JPanel {
         labels.add(gap(5));
         labels.add(subtitle);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        actions.setOpaque(false);
-        refreshButton.addActionListener(event -> refreshData());
-        actions.add(refreshButton);
-        createButton.setForeground(Color.WHITE);
-        createButton.setBackground(MainFrame.BLUE);
-        createButton.setOpaque(true);
-        createButton.setBorderPainted(false);
-        createButton.setFocusPainted(false);
-        createButton.addActionListener(event -> openEditor(null));
-        actions.add(createButton);
         heading.add(labels, BorderLayout.WEST);
-        heading.add(actions, BorderLayout.EAST);
         return heading;
     }
 
@@ -240,19 +228,15 @@ final class ServiceOrderPanel extends JPanel {
         titleBar.add(title, BorderLayout.WEST);
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 7, 0));
         actions.setOpaque(false);
-        detailButton.addActionListener(event -> showSelectedDetail());
-        visitOrdersButton.addActionListener(event -> showOrdersForSelectedVisit());
-        editButton.addActionListener(event -> {
-            ServiceOrderListItem item = selectedOrder();
-            if (item != null && serviceOrderBUS.canEdit(session, item)) {
-                openEditor(item.maChiDinh());
-            }
-        });
-        cancelOrderButton.addActionListener(event -> cancelSelected());
-        actions.add(visitOrdersButton);
-        actions.add(detailButton);
-        actions.add(editButton);
-        actions.add(cancelOrderButton);
+        refreshButton.addActionListener(event -> refreshData());
+        actions.add(refreshButton);
+        createButton.setForeground(Color.WHITE);
+        createButton.setBackground(MainFrame.BLUE);
+        createButton.setOpaque(true);
+        createButton.setBorderPainted(false);
+        createButton.setFocusPainted(false);
+        createButton.addActionListener(event -> openEditor(null));
+        actions.add(createButton);
         titleBar.add(actions, BorderLayout.EAST);
         card.add(titleBar, BorderLayout.NORTH);
         JScrollPane tableScroll = new JScrollPane(orderTable);
@@ -655,7 +639,11 @@ final class ServiceOrderPanel extends JPanel {
             protected void done() {
                 try {
                     new ServiceOrderDetailDialog(
-                            SwingUtilities.getWindowAncestor(ServiceOrderPanel.this), get())
+                            SwingUtilities.getWindowAncestor(ServiceOrderPanel.this), get(),
+                            serviceOrderBUS.canEdit(session, selected)
+                                    ? () -> openEditor(selected.maChiDinh()) : null,
+                            serviceOrderBUS.canCancel(session, selected)
+                                    ? ServiceOrderPanel.this::cancelSelected : null)
                             .setVisible(true);
                 } catch (InterruptedException exception) {
                     Thread.currentThread().interrupt();
@@ -714,7 +702,8 @@ final class ServiceOrderPanel extends JPanel {
             protected void done() {
                 try {
                     new ServiceOrderDetailDialog(
-                            SwingUtilities.getWindowAncestor(ServiceOrderPanel.this), get())
+                            SwingUtilities.getWindowAncestor(ServiceOrderPanel.this), get(),
+                            null, null)
                             .setVisible(true);
                 } catch (InterruptedException exception) {
                     Thread.currentThread().interrupt();

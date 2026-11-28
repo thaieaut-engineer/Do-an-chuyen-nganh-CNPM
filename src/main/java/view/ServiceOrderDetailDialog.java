@@ -8,6 +8,7 @@ import java.awt.Window;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -21,7 +22,8 @@ final class ServiceOrderDetailDialog extends JDialog {
     private static final DateTimeFormatter DATE_TIME =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-    ServiceOrderDetailDialog(Window owner, ServiceOrderDetail detail) {
+    ServiceOrderDetailDialog(Window owner, ServiceOrderDetail detail,
+            Runnable onEdit, Runnable onCancel) {
         super(owner, "Chi tiết chỉ định " + detail.maChiDinh(),
                 ModalityType.APPLICATION_MODAL);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -40,6 +42,32 @@ final class ServiceOrderDetailDialog extends JDialog {
         JScrollPane scroll = new JScrollPane(content);
         scroll.setBorder(null);
         root.add(scroll, BorderLayout.CENTER);
+        JButton close = new JButton("Đóng");
+        view.component.UIStyle.secondaryButton(close);
+        close.addActionListener(event -> dispose());
+        JPanel footer = new JPanel(new BorderLayout());
+        footer.setOpaque(false);
+        footer.setBorder(new EmptyBorder(4, 0, 0, 0));
+        JPanel actions = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 0));
+        actions.setOpaque(false);
+        if (onEdit != null) {
+            JButton edit = new JButton("Chỉnh sửa");
+            view.component.UIStyle.primaryButton(edit);
+            edit.addActionListener(event -> { dispose(); onEdit.run(); });
+            actions.add(edit);
+        }
+        if (onCancel != null) {
+            JButton cancel = new JButton("Hủy chỉ định");
+            view.component.UIStyle.dangerButton(cancel);
+            cancel.addActionListener(event -> { dispose(); onCancel.run(); });
+            actions.add(cancel);
+        }
+        footer.add(actions, BorderLayout.WEST);
+        JPanel closePanel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 0, 0));
+        closePanel.setOpaque(false);
+        closePanel.add(close);
+        footer.add(closePanel, BorderLayout.EAST);
+        root.add(footer, BorderLayout.SOUTH);
         setContentPane(root);
         setMinimumSize(new Dimension(560, 520));
         setSize(650, 650);

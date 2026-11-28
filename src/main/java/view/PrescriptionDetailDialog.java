@@ -9,6 +9,7 @@ import java.awt.Window;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -28,17 +29,18 @@ final class PrescriptionDetailDialog extends JDialog {
     private static final DateTimeFormatter DATE_TIME =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-    PrescriptionDetailDialog(Window owner, PrescriptionDetail detail) {
+    PrescriptionDetailDialog(Window owner, PrescriptionDetail detail,
+            Runnable onEdit, Runnable onCancel) {
         super(owner, "Chi tiết đơn thuốc " + detail.maDonThuoc(),
                 ModalityType.APPLICATION_MODAL);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setContentPane(createContent(detail));
+        setContentPane(createContent(detail, onEdit, onCancel));
         setMinimumSize(new Dimension(820, 620));
         setSize(1040, 740);
         setLocationRelativeTo(owner);
     }
 
-    private JPanel createContent(PrescriptionDetail detail) {
+    private JPanel createContent(PrescriptionDetail detail, Runnable onEdit, Runnable onCancel) {
         JPanel root = new JPanel(new BorderLayout(0, 10));
         root.setBackground(Color.WHITE);
         root.setBorder(new EmptyBorder(16, 18, 14, 18));
@@ -127,7 +129,32 @@ final class PrescriptionDetailDialog extends JDialog {
                         : " · Kê đơn không làm thay đổi tồn kho."));
         note.setForeground(MainFrame.MUTED);
         note.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        root.add(note, BorderLayout.SOUTH);
+        JPanel footer = new JPanel(new BorderLayout(10, 0));
+        footer.setOpaque(false);
+        footer.add(note, BorderLayout.CENTER);
+        JPanel actions = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 0));
+        actions.setOpaque(false);
+        if (onEdit != null) {
+            JButton edit = new JButton("Chỉnh sửa");
+            view.component.UIStyle.primaryButton(edit);
+            edit.addActionListener(event -> { dispose(); onEdit.run(); });
+            actions.add(edit);
+        }
+        if (onCancel != null) {
+            JButton cancel = new JButton("Hủy đơn");
+            view.component.UIStyle.dangerButton(cancel);
+            cancel.addActionListener(event -> { dispose(); onCancel.run(); });
+            actions.add(cancel);
+        }
+        JButton close = new JButton("Đóng");
+        view.component.UIStyle.secondaryButton(close);
+        close.addActionListener(event -> dispose());
+        footer.add(actions, BorderLayout.WEST);
+        JPanel closePanel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 0, 0));
+        closePanel.setOpaque(false);
+        closePanel.add(close);
+        footer.add(closePanel, BorderLayout.EAST);
+        root.add(footer, BorderLayout.SOUTH);
         return root;
     }
 

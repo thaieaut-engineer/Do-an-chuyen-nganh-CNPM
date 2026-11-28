@@ -168,19 +168,7 @@ final class PrescriptionPanel extends JPanel {
         labels.add(gap(5));
         labels.add(subtitle);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        actions.setOpaque(false);
-        refreshButton.addActionListener(event -> refreshData());
-        actions.add(refreshButton);
-        createButton.setForeground(Color.WHITE);
-        createButton.setBackground(MainFrame.BLUE);
-        createButton.setOpaque(true);
-        createButton.setBorderPainted(false);
-        createButton.setFocusPainted(false);
-        createButton.addActionListener(event -> openEditor(null));
-        actions.add(createButton);
         heading.add(labels, BorderLayout.WEST);
-        heading.add(actions, BorderLayout.EAST);
         return heading;
     }
 
@@ -241,17 +229,15 @@ final class PrescriptionPanel extends JPanel {
         titleBar.add(title, BorderLayout.WEST);
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 7, 0));
         actions.setOpaque(false);
-        detailButton.addActionListener(event -> showSelectedDetail());
-        editButton.addActionListener(event -> {
-            PrescriptionListItem item = selectedPrescription();
-            if (item != null && prescriptionBUS.canEdit(session, item)) {
-                openEditor(item.maDonThuoc());
-            }
-        });
-        cancelButton.addActionListener(event -> cancelSelected());
-        actions.add(detailButton);
-        actions.add(editButton);
-        actions.add(cancelButton);
+        refreshButton.addActionListener(event -> refreshData());
+        actions.add(refreshButton);
+        createButton.setForeground(Color.WHITE);
+        createButton.setBackground(MainFrame.BLUE);
+        createButton.setOpaque(true);
+        createButton.setBorderPainted(false);
+        createButton.setFocusPainted(false);
+        createButton.addActionListener(event -> openEditor(null));
+        actions.add(createButton);
         titleBar.add(actions, BorderLayout.EAST);
         card.add(titleBar, BorderLayout.NORTH);
         JScrollPane tableScroll = new JScrollPane(prescriptionTable);
@@ -697,7 +683,11 @@ final class PrescriptionPanel extends JPanel {
             protected void done() {
                 try {
                     new PrescriptionDetailDialog(
-                            SwingUtilities.getWindowAncestor(PrescriptionPanel.this), get())
+                            SwingUtilities.getWindowAncestor(PrescriptionPanel.this), get(),
+                            prescriptionBUS.canEdit(session, selected)
+                                    ? () -> openEditor(selected.maDonThuoc()) : null,
+                            prescriptionBUS.canCancel(session, selected)
+                                    ? PrescriptionPanel.this::cancelSelected : null)
                             .setVisible(true);
                 } catch (InterruptedException exception) {
                     Thread.currentThread().interrupt();

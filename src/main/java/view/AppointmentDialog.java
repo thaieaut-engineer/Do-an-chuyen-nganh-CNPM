@@ -155,15 +155,13 @@ final class AppointmentDialog extends JDialog {
                 new EmptyBorder(7, 10, 7, 10)));
         JPanel footer = new JPanel(new BorderLayout(8, 0));
         footer.setOpaque(false);
+        footer.setBorder(new EmptyBorder(10, 0, 0, 0));
         footer.add(message, BorderLayout.CENTER);
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         buttons.setOpaque(false);
         cancelButton.addActionListener(event -> dispose());
-        saveButton.setForeground(Color.WHITE);
-        saveButton.setBackground(MainFrame.BLUE);
-        saveButton.setOpaque(true);
-        saveButton.setBorderPainted(false);
-        saveButton.setFocusPainted(false);
+        view.component.UIStyle.secondaryButton(cancelButton);
+        view.component.UIStyle.primaryButton(saveButton);
         saveButton.addActionListener(event -> save());
         buttons.add(cancelButton);
         buttons.add(saveButton);

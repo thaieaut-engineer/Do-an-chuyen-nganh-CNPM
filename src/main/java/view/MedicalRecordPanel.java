@@ -148,19 +148,7 @@ final class MedicalRecordPanel extends JPanel {
         labels.add(gap(5));
         labels.add(subtitle);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        actions.setOpaque(false);
-        refreshButton.addActionListener(event -> refreshData());
-        actions.add(refreshButton);
-        createButton.setForeground(Color.WHITE);
-        createButton.setBackground(MainFrame.BLUE);
-        createButton.setOpaque(true);
-        createButton.setBorderPainted(false);
-        createButton.setFocusPainted(false);
-        createButton.addActionListener(event -> openEditor(null));
-        actions.add(createButton);
         heading.add(labels, BorderLayout.WEST);
-        heading.add(actions, BorderLayout.EAST);
         return heading;
     }
 
@@ -255,15 +243,15 @@ final class MedicalRecordPanel extends JPanel {
         titleBar.add(title, BorderLayout.WEST);
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         actions.setOpaque(false);
-        detailsButton.addActionListener(event -> showSelectedDetails());
-        editButton.addActionListener(event -> {
-            MedicalRecordListItem record = selectedRecord();
-            if (record != null && recordBUS.canEdit(session, record)) {
-                openEditor(record.maPhieuKham());
-            }
-        });
-        actions.add(detailsButton);
-        actions.add(editButton);
+        refreshButton.addActionListener(event -> refreshData());
+        actions.add(refreshButton);
+        createButton.setForeground(Color.WHITE);
+        createButton.setBackground(MainFrame.BLUE);
+        createButton.setOpaque(true);
+        createButton.setBorderPainted(false);
+        createButton.setFocusPainted(false);
+        createButton.addActionListener(event -> openEditor(null));
+        actions.add(createButton);
         titleBar.add(actions, BorderLayout.EAST);
         card.add(titleBar, BorderLayout.NORTH);
 
@@ -567,7 +555,9 @@ final class MedicalRecordPanel extends JPanel {
                 try {
                     MedicalRecordDetail detail = get();
                     new MedicalRecordDetailDialog(
-                            SwingUtilities.getWindowAncestor(MedicalRecordPanel.this), detail)
+                            SwingUtilities.getWindowAncestor(MedicalRecordPanel.this), detail,
+                            recordBUS.canEdit(session, selected)
+                                    ? () -> openEditor(selected.maPhieuKham()) : null)
                             .setVisible(true);
                     setMessage(" ", MainFrame.MUTED);
                 } catch (InterruptedException exception) {

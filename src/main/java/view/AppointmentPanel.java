@@ -155,22 +155,7 @@ final class AppointmentPanel extends JPanel {
         labels.add(gap(5));
         labels.add(subtitle);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        actions.setOpaque(false);
-        refreshButton.addActionListener(event -> refreshData());
-        actions.add(refreshButton);
-        if (canManage()) {
-            addButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            addButton.setForeground(Color.WHITE);
-            addButton.setBackground(MainFrame.BLUE);
-            addButton.setOpaque(true);
-            addButton.setBorderPainted(false);
-            addButton.setFocusPainted(false);
-            addButton.addActionListener(event -> openEditor(null));
-            actions.add(addButton);
-        }
         heading.add(labels, BorderLayout.WEST);
-        heading.add(actions, BorderLayout.EAST);
         return heading;
     }
 
@@ -259,6 +244,20 @@ final class AppointmentPanel extends JPanel {
     private JPanel createToolbar() {
         JPanel root = new JPanel(new BorderLayout(8, 8));
         root.setOpaque(false);
+        JPanel pageActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        pageActions.setOpaque(false);
+        refreshButton.addActionListener(event -> refreshData());
+        pageActions.add(refreshButton);
+        if (canManage()) {
+            addButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            addButton.setForeground(Color.WHITE);
+            addButton.setBackground(MainFrame.BLUE);
+            addButton.setOpaque(true);
+            addButton.setBorderPainted(false);
+            addButton.setFocusPainted(false);
+            addButton.addActionListener(event -> openEditor(null));
+            pageActions.add(addButton);
+        }
         JPanel filters = new JPanel();
         filters.setOpaque(false);
         filters.setLayout(new javax.swing.BoxLayout(filters, javax.swing.BoxLayout.Y_AXIS));
@@ -291,19 +290,8 @@ final class AppointmentPanel extends JPanel {
         catalogFilters.add(clearFiltersButton);
         filters.add(catalogFilters);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
-        actions.setOpaque(false);
-        detailsButton.addActionListener(event -> showDetails());
-        editButton.addActionListener(event -> openEditor(selectedAppointmentId()));
-        confirmButton.addActionListener(event -> confirmSelected());
-        cancelButton.addActionListener(event -> cancelSelected());
-        noShowButton.addActionListener(event -> markSelectedNoShow());
-        for (JButton button : List.of(detailsButton, editButton, confirmButton, cancelButton, noShowButton)) {
-            button.setEnabled(false);
-            actions.add(button);
-        }
+        root.add(pageActions, BorderLayout.NORTH);
         root.add(filters, BorderLayout.CENTER);
-        root.add(actions, BorderLayout.SOUTH);
 
         searchField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -655,7 +643,7 @@ final class AppointmentPanel extends JPanel {
         if (appointmentId > 0) {
             new AppointmentDetailDialog(
                     (java.awt.Frame) SwingUtilities.getWindowAncestor(this),
-                    session, appointmentBUS, appointmentId).setVisible(true);
+                    session, appointmentBUS, patientBUS, appointmentId).setVisible(true);
         }
     }
 

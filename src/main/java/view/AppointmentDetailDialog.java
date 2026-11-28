@@ -2,6 +2,7 @@ package view;
 
 import bus.appointment.AppointmentException;
 import bus.appointment.LichHenBUS;
+import bus.patient.BenhNhanBUS;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -13,8 +14,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -33,6 +36,7 @@ final class AppointmentDetailDialog extends JDialog {
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private final AuthenticatedSession session;
     private final LichHenBUS appointmentBUS;
+    private final BenhNhanBUS patientBUS;
     private final long appointmentId;
     private final JPanel details = new JPanel(new java.awt.GridLayout(0, 2, 14, 8));
     private final DefaultTableModel historyModel = new DefaultTableModel(
@@ -47,10 +51,11 @@ final class AppointmentDetailDialog extends JDialog {
 
     AppointmentDetailDialog(
             Frame owner, AuthenticatedSession session,
-            LichHenBUS appointmentBUS, long appointmentId) {
+            LichHenBUS appointmentBUS, BenhNhanBUS patientBUS, long appointmentId) {
         super(owner, "Chi tiết lịch hẹn", true);
         this.session = session;
         this.appointmentBUS = appointmentBUS;
+        this.patientBUS = patientBUS;
         this.appointmentId = appointmentId;
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setContentPane(createContent());
@@ -93,6 +98,35 @@ final class AppointmentDetailDialog extends JDialog {
         center.add(details, BorderLayout.NORTH);
         center.add(historyScroll, BorderLayout.CENTER);
         root.add(center, BorderLayout.CENTER);
+        JPanel footer = new JPanel(new BorderLayout());
+        footer.setOpaque(false);
+        JButton edit = new JButton("Chỉnh sửa");
+        JButton confirm = new JButton("Xác nhận");
+        JButton cancel = new JButton("Hủy lịch");
+        JButton noShow = new JButton("Đánh dấu vắng");
+        JButton close = new JButton("Đóng");
+        view.component.UIStyle.secondaryButton(edit);
+        view.component.UIStyle.primaryButton(confirm);
+        view.component.UIStyle.dangerButton(cancel);
+        view.component.UIStyle.secondaryButton(noShow);
+        view.component.UIStyle.secondaryButton(close);
+        boolean canManage = session.hasPermission("LH_QUANLY");
+        edit.setVisible(canManage);
+        confirm.setVisible(canManage); cancel.setVisible(canManage); noShow.setVisible(canManage);
+        edit.addActionListener(event -> {
+            dispose();
+            new AppointmentDialog((Frame) getOwner(), session, appointmentBUS, patientBUS, appointmentId, ignored -> { }).setVisible(true);
+        });
+        confirm.addActionListener(event -> runAction("confirm"));
+        cancel.addActionListener(event -> runAction("cancel"));
+        noShow.addActionListener(event -> runAction("noShow"));
+        close.addActionListener(event -> dispose());
+        JPanel buttons = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 7, 0));
+        buttons.setOpaque(false);
+        buttons.add(edit); buttons.add(confirm); buttons.add(cancel); buttons.add(noShow);
+        buttons.add(close);
+        footer.add(buttons, BorderLayout.EAST);
+        root.add(footer, BorderLayout.SOUTH);
         return root;
     }
 
@@ -174,6 +208,25 @@ final class AppointmentDetailDialog extends JDialog {
         message.setText(error);
         if (!(cause instanceof AppointmentException)) {
             LOGGER.log(Level.SEVERE, "Unexpected appointment detail error.", cause);
+        }
+    }
+
+    private void runAction(String action) {
+        try {
+            if ("confirm".equals(action)) {
+                appointmentBUS.confirm(session, appointmentId);
+            } else {
+                String reason = JOptionPane.showInputDialog(this, "Lý do thao tác:", "Cập nhật lịch hẹn", JOptionPane.PLAIN_MESSAGE);
+                if (reason == null) return;
+                if (reason.isBlank()) reason = "Cập nhật từ cửa sổ chi tiết";
+                if ("cancel".equals(action)) appointmentBUS.cancel(session, appointmentId, reason.trim());
+                else appointmentBUS.markNoShow(session, appointmentId, reason.trim());
+            }
+            message.setForeground(MainFrame.MUTED);
+            message.setText("Đã cập nhật lịch hẹn.");
+            loadData();
+        } catch (AppointmentException | RuntimeException exception) {
+            showFailure(exception.getMessage(), exception);
         }
     }
 

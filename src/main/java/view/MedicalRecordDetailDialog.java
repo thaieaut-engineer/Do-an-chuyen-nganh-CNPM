@@ -11,6 +11,7 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JButton;
 import javax.swing.border.EmptyBorder;
 import model.medicalrecord.MedicalRecordDetail;
 
@@ -20,17 +21,17 @@ final class MedicalRecordDetailDialog extends JDialog {
     private static final DateTimeFormatter DATE_TIME =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-    MedicalRecordDetailDialog(Window owner, MedicalRecordDetail record) {
+    MedicalRecordDetailDialog(Window owner, MedicalRecordDetail record, Runnable onEdit) {
         super(owner, "Chi tiết phiếu khám " + record.maPhieuKham(),
                 ModalityType.APPLICATION_MODAL);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setContentPane(createContent(record));
+        setContentPane(createContent(record, onEdit));
         setMinimumSize(new Dimension(620, 620));
         setSize(700, 720);
         setLocationRelativeTo(owner);
     }
 
-    private JPanel createContent(MedicalRecordDetail record) {
+    private JPanel createContent(MedicalRecordDetail record, Runnable onEdit) {
         JPanel root = new JPanel(new BorderLayout(0, 10));
         root.setBackground(Color.WHITE);
         root.setBorder(new EmptyBorder(18, 20, 16, 20));
@@ -46,6 +47,29 @@ final class MedicalRecordDetailDialog extends JDialog {
         JScrollPane scroll = new JScrollPane(details);
         scroll.setBorder(null);
         root.add(scroll, BorderLayout.CENTER);
+        JPanel footer = new JPanel(new BorderLayout());
+        footer.setOpaque(false);
+        footer.setBorder(new EmptyBorder(4, 0, 0, 0));
+        JPanel actions = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 0));
+        actions.setOpaque(false);
+        if (onEdit != null) {
+            JButton edit = new JButton("Chỉnh sửa");
+            view.component.UIStyle.primaryButton(edit);
+            edit.addActionListener(event -> {
+                dispose();
+                onEdit.run();
+            });
+            actions.add(edit);
+        }
+        JButton close = new JButton("Đóng");
+        view.component.UIStyle.secondaryButton(close);
+        close.addActionListener(event -> dispose());
+        JPanel buttons = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 0, 0));
+        buttons.setOpaque(false);
+        buttons.add(close);
+        footer.add(actions, BorderLayout.WEST);
+        footer.add(buttons, BorderLayout.EAST);
+        root.add(footer, BorderLayout.SOUTH);
         return root;
     }
 

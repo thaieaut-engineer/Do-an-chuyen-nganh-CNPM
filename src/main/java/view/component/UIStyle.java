@@ -158,6 +158,17 @@ public final class UIStyle {
         JOptionPane.showMessageDialog(parent, message, "Không thể thực hiện", JOptionPane.ERROR_MESSAGE);
     }
 
+    /** Hiển thị form dialog có kích thước ổn định và có thể cuộn. */
+    public static int showFormDialog(Component parent, javax.swing.JPanel form, String title, java.awt.Dimension size) {
+        form.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+        javax.swing.JScrollPane scroll = new javax.swing.JScrollPane(form);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.setPreferredSize(size);
+        scroll.getVerticalScrollBar().setUnitIncrement(14);
+        return JOptionPane.showConfirmDialog(parent, scroll, title,
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+    }
+
     public static String friendlyError(Throwable error, String fallback) {
         Throwable current = error;
         while (current != null) {
